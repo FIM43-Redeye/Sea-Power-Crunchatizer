@@ -126,6 +126,30 @@ namespace Sea_Power_Crunchatizer
         }
     }
     
+    //Magazine count control for base WeaponSystem
+    [HarmonyPatch(typeof(WeaponSystem), "decreaseMagazineAmmoCount", typeof(string), typeof(int))]
+    public static class BottomlessMagsDecrementMags
+    {
+        private static bool Prefix(ref WeaponMagazineSystem __instance)
+        {
+            switch (CrunchatizerCore.BottomlessMags.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    return true;
+            }
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // Abort the function and skip removing ammo
+                    MelonLogger.Msg("Caught a player ship trying to remove ammo from a mag, skipping!");
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+    
     // Only copy of increaseAmmunitionCount, to prevent returning rounds from eating up 
     [HarmonyPatch(typeof(WeaponMagazineSystem), "increaseAmmunitionCount", typeof(string))]
     public static class BottomlessMagsIncrement
@@ -186,13 +210,12 @@ namespace Sea_Power_Crunchatizer
                     // LEAVE THESE AT ONE if you don't want to do anything with them!
                     MelonLogger.Msg("We are now operating on:");
                     CrunchatizerCore.PrintObjectFields(__instance._vwp);
-                    MelonLogger.Msg("Multiplying fire rate/dividing launch delay and burst time of " +
-                                    __instance._vwp._fireRatePerMinute + " and " +
-                                    __instance._vwp._delayBetweenLaunches + " by " +
+                    MelonLogger.Msg("Multiplying fire rate/dividing launch delay+burst time+salvo time+burst time by " +
                                     CrunchatizerCore.FireRateMult.Value);
                     __instance._vwp._fireRatePerMinute *= CrunchatizerCore.FireRateMult.Value;
                     __instance._vwp._delayBetweenLaunches /= CrunchatizerCore.FireRateMult.Value;
                     __instance._vwp._burstTime /= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._salvoFireTime /= CrunchatizerCore.FireRateMult.Value;
                     MelonLogger.Msg("Dividing reaction time of " + __instance._vwp._maxReactiontime + " by " + CrunchatizerCore.ReactionTimeDiv.Value);
                     __instance._vwp._maxReactiontime /= CrunchatizerCore.ReactionTimeDiv.Value;
                     MelonLogger.Msg("Dividing target acquisition time of " + __instance._vwp._targetAcquisitionTime + " by " + CrunchatizerCore.TargetAcqTimeDiv.Value);
@@ -209,6 +232,23 @@ namespace Sea_Power_Crunchatizer
             }
         }
     }
+    
+    // We need special code to alter properties inherent solely to WeaponSystemGun.
+    [HarmonyPatch(typeof(WeaponSystemGun), "LoadFromInI", typeof(IniHandler), typeof(string),
+        typeof(ObjectBaseParameters), typeof(string))]
+    public static class AlterGunFireRate
+    {
+        private static void Postfix(ref WeaponSystemGun __instance, ref float ____burstDelay, ref float ____delayBetweenShotsinBurst, ref float ____shellReloadTime)
+        {
+            if (__instance._baseObject._taskforce.Side == Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("trying guns!");
+                ____burstDelay /= CrunchatizerCore.FireRateMult.Value;
+                ____shellReloadTime /= CrunchatizerCore.FireRateMult.Value;
+                ____delayBetweenShotsinBurst /= CrunchatizerCore.FireRateMult.Value;
+            }
+        }
+    }
 
     // To change shared launch delays.
     [HarmonyPatch(typeof(ObjectBaseLoader), "LoadWeaponSystems", typeof(IniHandler), typeof(ObjectBaseParameters), typeof(ObjectBase))]
@@ -216,9 +256,12 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Postfix(ref ObjectBaseParameters obp)
         {
-            foreach (var pair in obp._baseObject._sharedLaunchIntervals.ToList())
+            if (obp._baseObject._taskforce.Side == Taskforce.TfType.Player)
             {
-                obp._baseObject._sharedLaunchIntervals[pair.Key] /= CrunchatizerCore.FireRateMult.Value;
+                foreach (var pair in obp._baseObject._sharedLaunchIntervals.ToList())
+                {
+                    obp._baseObject._sharedLaunchIntervals[pair.Key] /= CrunchatizerCore.FireRateMult.Value;
+                }
             }
         }
     }
@@ -228,13 +271,17 @@ namespace Sea_Power_Crunchatizer
     [HarmonyPatch(typeof(GunBarrel), MethodType.Constructor, typeof(GameObject), typeof(WeaponParameters), typeof(WeaponSystemGun), typeof(GameObject), typeof(Vector3), typeof(Vector3), typeof(float), typeof(float))]
     public static class InterceptRecoilData
     {
-        private static void Prefix(ref float recoilStrength)
+        private static void Prefix(ref float recoilTime, ref WeaponSystemGun vwsg)
         {
-            MelonLogger.Msg("I hate doing this. Our recoil strength is " + recoilStrength);
-            recoilStrength /= CrunchatizerCore.FireRateMult.Value;
-            MelonLogger.Msg("Now it is " + recoilStrength);
+            if (vwsg._baseObject._taskforce.Side == Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("I hate doing this. Our recoil time is " + recoilTime);
+                recoilTime /= CrunchatizerCore.FireRateMult.Value;
+                MelonLogger.Msg("Now it is " + recoilTime);
+            }
         }
     }
+    
     
     // Now for aircraft and helos. They have different inits, so need different modifiers.
     // Would be easier to peg range flown at zero/fuel quantity at max but I'm too dumb for that
@@ -243,10 +290,13 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Prefix(ref AircraftParameters aircraftParameters)
         {
-            MelonLogger.Msg("Our base fixed-wing range is " + aircraftParameters._maxRangeInKm + " kilometers");
-            aircraftParameters._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
-            MelonLogger.Msg("Post-modification it is now " + aircraftParameters._maxRangeInKm + " kilometers");
-                
+            if (aircraftParameters._baseObject._taskforce.Side == Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("Our base fixed-wing range is " + aircraftParameters._maxRangeInKm + " kilometers");
+                aircraftParameters._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+                MelonLogger.Msg("Post-modification it is now " + aircraftParameters._maxRangeInKm + " kilometers");
+            }
+
         }
     }
     
@@ -256,10 +306,12 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Prefix(ref Helicopter __instance)
         {
-            
-            MelonLogger.Msg("Our base rotary-wing range is " + __instance._hp._maxRangeInKm + " kilometers");
-            __instance._hp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
-            MelonLogger.Msg("Post-modification it is now " + __instance._hp._maxRangeInKm + " kilometers");
+            if (__instance._taskforce.Side == Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("Our base rotary-wing range is " + __instance._hp._maxRangeInKm + " kilometers");
+                __instance._hp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+                MelonLogger.Msg("Post-modification it is now " + __instance._hp._maxRangeInKm + " kilometers");
+            }
         }
     }
 }
