@@ -1,6 +1,9 @@
-﻿using HarmonyLib;
+﻿using System;
+using HarmonyLib;
 using MelonLoader;
+using NodeCanvas.Tasks.Actions;
 using SeaPower;
+using System.Reflection;
 using UnityEngine;
 
 namespace Sea_Power_Crunchatizer
@@ -18,6 +21,31 @@ namespace Sea_Power_Crunchatizer
         public static MelonPreferences_Entry<int> TraverseSpeedMult;
         public static MelonPreferences_Entry<int> AircraftRangeMult;
 
+        public static void PrintObjectFields(object obj)
+        {
+            if (obj == null)
+            {
+                MelonLogger.Msg("Thing itself is null");
+                return;
+            }
+
+            MelonLogger.Msg($"Fields of object of type {obj.GetType().Name}:");
+        
+            // Get all instance fields (public and non-public)
+            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            foreach (var field in fields)
+            {
+                // Get the field value
+                var value = field.GetValue(obj);
+            
+                // Safely convert the value to string to handle potential nulls or unprintable types
+                string valueString = value != null ? value.ToString() : "null";
+            
+                // Print field name and its value
+               MelonLogger.Msg($"{field.Name}: {valueString}");
+            }
+        }
         public override void OnInitializeMelon()
         {
             var harmony = new HarmonyLib.Harmony("net.particle.sea_power_crunchatizer");
@@ -120,7 +148,7 @@ namespace Sea_Power_Crunchatizer
     }
     
     // Container auto-refresh code. This should really be fixed up for later, but for now it replenishes single containers just so I can publish this. Ideally, it would check the entire ship to see if it has no ammunition of the type remaining and no magazines containing the type.
-    [HarmonyPatch(typeof(WeaponContainer), "closeHatches")]
+    [HarmonyPatch(typeof(WeaponContainer), "launch")]
     public static class ContainerAutoRefresh
     {
         private static void Postfix(ref WeaponContainer __instance)
@@ -129,6 +157,7 @@ namespace Sea_Power_Crunchatizer
             {
                 // If the setting's off, don't do anything!
                 case false:
+                    MelonLogger.Msg("Not doing anything, setting is off for container replen");
                     return;
             }
 
@@ -148,6 +177,13 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Postfix(ref WeaponParameters __result)
         {
+            if (__result._weaponSystem == null)
+            {
+                MelonLogger.Msg("Caught a nullref. Culprit data below.");
+                CrunchatizerCore.PrintObjectFields(__result);
+                return; // Nullref protection??? I mean if it doesn't have a bloody weapon system we aren't going to be bloody DOING anything now are we
+            }
+
             switch (__result._weaponSystem._baseObject._taskforce.Side)
             {
                 case Taskforce.TfType.Player:
@@ -202,12 +238,12 @@ namespace Sea_Power_Crunchatizer
     [HarmonyPatch(typeof(Helicopter), "init")]
     public static class HijackHelicopterInit
     {
-        private static void Prefix(ref HelicopterParameters helicopterParameters)
+        private static void Prefix(ref Helicopter __instance)
         {
             
-            MelonLogger.Msg("Our base rotary-wing range is " + helicopterParameters._maxRangeInKm + " kilometers");
-            helicopterParameters._maxRangeInKm = CrunchatizerCore.AircraftRangeMult.Value;
-            MelonLogger.Msg("Post-modification it is now " + helicopterParameters._maxRangeInKm + " kilometers");
+            MelonLogger.Msg("Our base rotary-wing range is " + __instance._hp._maxRangeInKm + " kilometers");
+            __instance._hp._maxRangeInKm = CrunchatizerCore.AircraftRangeMult.Value;
+            MelonLogger.Msg("Post-modification it is now " + __instance._hp._maxRangeInKm + " kilometers");
         }
     }
 }
