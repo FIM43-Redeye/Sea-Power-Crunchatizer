@@ -7,7 +7,7 @@ using Sea_Power_Crunchatizer;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: MelonInfo(typeof(CrunchatizerCore), "Sea Power Crunchatizer", "0.0.0.ITSNOTEVENPUBLISHEDYET", "Fractal")]
+[assembly: MelonInfo(typeof(CrunchatizerCore), "Sea Power Crunchatizer", "0.0.0.1", "Fractal")]
 [assembly: MelonGame("Triassic Games", "Sea Power")]
 [assembly: AssemblyTitle("Sea Power Crunchatizer")]
 [assembly: AssemblyCopyright("Public Domain")]

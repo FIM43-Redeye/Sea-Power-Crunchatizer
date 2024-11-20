@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using MelonLoader;
 using NodeCanvas.Tasks.Actions;
 using SeaPower;
 using System.Reflection;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Sea_Power_Crunchatizer
@@ -171,38 +174,51 @@ namespace Sea_Power_Crunchatizer
         }
     }
     
-    // Weapon modification code. See about splitting this up to apply to different weapon types in the future, maybe making reload speed apply to RBUs too? It doesn't right now.
-    [HarmonyPatch(typeof(ObjectBaseLoader), "initWeaponParameters")]
-    public static class AlterWeaponProperties
+    // The Really Real Weapon Modification Code.
+    [HarmonyPatch(typeof(WeaponSystem), "LoadFromInI")]
+    public static class MunchWeaponProperties
     {
-        private static void Postfix(ref WeaponParameters __result)
+        private static void Postfix(ref WeaponSystem __instance)
         {
-            if (__result._weaponSystem == null)
-            {
-                MelonLogger.Msg("Caught a nullref. Culprit data below.");
-                CrunchatizerCore.PrintObjectFields(__result);
-                return; // Nullref protection??? I mean if it doesn't have a bloody weapon system we aren't going to be bloody DOING anything now are we
-            }
-
-            switch (__result._weaponSystem._baseObject._taskforce.Side)
+            switch (__instance._baseObject._taskforce.Side)
             {
                 case Taskforce.TfType.Player:
                     // LEAVE THESE AT ONE if you don't want to do anything with them!
-                    MelonLogger.Msg("Multiplying fire rate of " + __result._fireRatePerMinute + " by " + CrunchatizerCore.FireRateMult);
-                    __result._fireRatePerMinute *= CrunchatizerCore.FireRateMult.Value;
-                    MelonLogger.Msg("Dividing reaction time of " + __result._maxReactiontime + " by " + CrunchatizerCore.ReactionTimeDiv);
-                    __result._maxReactiontime /= CrunchatizerCore.ReactionTimeDiv.Value;
-                    MelonLogger.Msg("Dividing target acquisition time of " + __result._targetAcquisitionTime + " by " + CrunchatizerCore.TargetAcqTimeDiv);
-                    __result._targetAcquisitionTime /= CrunchatizerCore.TargetAcqTimeDiv.Value;
-                    MelonLogger.Msg("Dividing pre-launch delay of " + __result._preLaunchDelay + " by " + CrunchatizerCore.PreLaunchDelayDiv);
-                    __result._preLaunchDelay /= CrunchatizerCore.PreLaunchDelayDiv.Value;
-                    MelonLogger.Msg("Dividing mag reload time of " + __result._magazineReloadTime + " by " + CrunchatizerCore.MagReloadTimeDiv);
-                    __result._magazineReloadTime /= CrunchatizerCore.MagReloadTimeDiv.Value;
-                    MelonLogger.Msg("Multiplying vertical traverse rate of " + __result._verticalDegreesPerSecond + " by " + CrunchatizerCore.TraverseSpeedMult);
-                    __result._verticalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
-                    MelonLogger.Msg("Multiplying horizontal traverse rate of " + __result._horizontalDegreesPerSecond + " by " + CrunchatizerCore.TraverseSpeedMult);
-                    __result._horizontalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
+                    MelonLogger.Msg("We are now operating on:");
+                    CrunchatizerCore.PrintObjectFields(__instance._vwp);
+                    MelonLogger.Msg("Multiplying fire rate/dividing launch delay and burst time of " +
+                                    __instance._vwp._fireRatePerMinute + " and " +
+                                    __instance._vwp._delayBetweenLaunches + " by " +
+                                    CrunchatizerCore.FireRateMult.Value);
+                    __instance._vwp._fireRatePerMinute *= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._delayBetweenLaunches /= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._burstTime /= CrunchatizerCore.FireRateMult.Value;
+                    MelonLogger.Msg("Dividing reaction time of " + __instance._vwp._maxReactiontime + " by " + CrunchatizerCore.ReactionTimeDiv.Value);
+                    __instance._vwp._maxReactiontime /= CrunchatizerCore.ReactionTimeDiv.Value;
+                    MelonLogger.Msg("Dividing target acquisition time of " + __instance._vwp._targetAcquisitionTime + " by " + CrunchatizerCore.TargetAcqTimeDiv.Value);
+                    __instance._vwp._targetAcquisitionTime /= CrunchatizerCore.TargetAcqTimeDiv.Value;
+                    MelonLogger.Msg("Dividing pre-launch delay of " + __instance._vwp._preLaunchDelay + " by " + CrunchatizerCore.PreLaunchDelayDiv.Value);
+                    __instance._vwp._preLaunchDelay /= CrunchatizerCore.PreLaunchDelayDiv.Value;
+                    MelonLogger.Msg("Dividing mag reload time of " + __instance._vwp._magazineReloadTime + " by " + CrunchatizerCore.MagReloadTimeDiv.Value);
+                    __instance._vwp._magazineReloadTime /= CrunchatizerCore.MagReloadTimeDiv.Value;
+                    MelonLogger.Msg("Multiplying vertical traverse rate of " + __instance._vwp._verticalDegreesPerSecond + " by " + CrunchatizerCore.TraverseSpeedMult.Value);
+                    __instance._vwp._verticalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
+                    MelonLogger.Msg("Multiplying horizontal traverse rate of " + __instance._vwp._horizontalDegreesPerSecond + " by " + CrunchatizerCore.TraverseSpeedMult.Value);
+                    __instance._vwp._horizontalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
                     break;
+            }
+        }
+    }
+
+    // To change shared launch delays.
+    [HarmonyPatch(typeof(ObjectBaseLoader), "LoadWeaponSystems", typeof(IniHandler), typeof(ObjectBaseParameters), typeof(ObjectBase))]
+    public static class AlterWeaponSystemsAtObjectLoad
+    {
+        private static void Postfix(ref ObjectBaseParameters obp)
+        {
+            foreach (var pair in obp._baseObject._sharedLaunchIntervals.ToList())
+            {
+                obp._baseObject._sharedLaunchIntervals[pair.Key] /= CrunchatizerCore.FireRateMult.Value;
             }
         }
     }
@@ -228,7 +244,7 @@ namespace Sea_Power_Crunchatizer
         private static void Prefix(ref AircraftParameters aircraftParameters)
         {
             MelonLogger.Msg("Our base fixed-wing range is " + aircraftParameters._maxRangeInKm + " kilometers");
-            aircraftParameters._maxRangeInKm = CrunchatizerCore.AircraftRangeMult.Value;
+            aircraftParameters._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
             MelonLogger.Msg("Post-modification it is now " + aircraftParameters._maxRangeInKm + " kilometers");
                 
         }
@@ -242,7 +258,7 @@ namespace Sea_Power_Crunchatizer
         {
             
             MelonLogger.Msg("Our base rotary-wing range is " + __instance._hp._maxRangeInKm + " kilometers");
-            __instance._hp._maxRangeInKm = CrunchatizerCore.AircraftRangeMult.Value;
+            __instance._hp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
             MelonLogger.Msg("Post-modification it is now " + __instance._hp._maxRangeInKm + " kilometers");
         }
     }
