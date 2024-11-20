@@ -267,6 +267,7 @@ namespace Sea_Power_Crunchatizer
                     // LEAVE THESE AT ONE if you don't want to do anything with them!
                     //MelonLogger.Msg("We are now operating on:");
                     //CrunchatizerCore.PrintObjectFields(__instance._vwp);
+                    if (__instance._baseObject._type == ObjectBase.ObjectType.Aircraft) return;
                     if (CrunchatizerCore.LogSpam.Value)
                     {
                         MelonLogger.Msg(
@@ -304,6 +305,7 @@ namespace Sea_Power_Crunchatizer
         private static void Postfix(ref WeaponSystemGun __instance, ref float ____burstDelay, ref float ____delayBetweenShotsinBurst, ref float ____shellReloadTime)
         {
             if (__instance._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (__instance._baseObject._type == ObjectBase.ObjectType.Aircraft) return;
             if (CrunchatizerCore.LogSpam.Value)
             {
                 MelonLogger.Msg("For gun " + __instance._name + ", burst delay is " + ____burstDelay + ", shell reload time is " + ____shellReloadTime + ", delay between shots in burst is " + ____delayBetweenShotsinBurst);
@@ -323,7 +325,12 @@ namespace Sea_Power_Crunchatizer
         private static void Postfix(ref ObjectBaseParameters obp)
         {
             if (obp._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
-            if (CrunchatizerCore.LogSpam.Value)
+            if (obp._baseObject._type is ObjectBase.ObjectType.Aircraft ||
+                obp._baseObject._type is ObjectBase.ObjectType.Helicopter)
+            {
+                return;
+            }
+        if (CrunchatizerCore.LogSpam.Value)
             {
                 MelonLogger.Msg("Ship " + obp._baseObject.name + " has shared launch intervals AND is player, we proceed to modify them!");
             }
@@ -350,6 +357,8 @@ namespace Sea_Power_Crunchatizer
         [UsedImplicitly]
         private static void Prefix(ref float recoilTime, ref WeaponSystemGun vwsg)
         {
+            
+            if (vwsg._baseObject._type == ObjectBase.ObjectType.Aircraft) return;
             if (vwsg._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
             if (CrunchatizerCore.LogSpam.Value)
             {
@@ -370,17 +379,23 @@ namespace Sea_Power_Crunchatizer
     public static class HijackAircraftInit
     {
         [UsedImplicitly]
-        private static void Prefix(ref AircraftParameters aircraftParameters)
+        private static void Postfix(ref AircraftParameters aircraftParameters, ref Aircraft __instance)
         {
             if (aircraftParameters._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
             if (CrunchatizerCore.LogSpam.Value)
             {
-                MelonLogger.Msg("Our base fixed-wing range is " + aircraftParameters._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Our base fixed-wing range is " + aircraftParameters._baseObject._obp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Our base default fixed-wing range is " + aircraftParameters._baseObject._obp._defaultMaxRangeInKm + " kilometers");
             }
             aircraftParameters._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            aircraftParameters._defaultMaxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.RangeInKm.Value *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.ActualRangeInKm.Value *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.RangeOnMap.Value *= CrunchatizerCore.AircraftRangeMult.Value;
             if (CrunchatizerCore.LogSpam.Value)
             {
-                MelonLogger.Msg("Post-modification it is now " + aircraftParameters._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Post-mod fixed-wing range is " + aircraftParameters._baseObject._obp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Post-mod default fixed-wing range is " + aircraftParameters._baseObject._obp._defaultMaxRangeInKm + " kilometers");
             }
 
         }
@@ -394,14 +409,22 @@ namespace Sea_Power_Crunchatizer
         private static void Prefix(ref Helicopter __instance)
         {
             if (__instance._taskforce.Side != Taskforce.TfType.Player) return;
-            if (CrunchatizerCore.LogSpam.Value)
+            if (__instance._obp == null)
             {
-                MelonLogger.Msg("Our base rotary-wing range is " + __instance._hp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Base params not initialized!!");
+                return;
             }
-            __instance._hp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
             if (CrunchatizerCore.LogSpam.Value)
             {
-                MelonLogger.Msg("Post-modification it is now " + __instance._hp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Our base rotary-wing range is " + __instance._obp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Our default base rotary-wing range is " + __instance._obp._defaultMaxRangeInKm + " kilometers");
+            }
+            __instance._obp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance._obp._defaultMaxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            if (CrunchatizerCore.LogSpam.Value)
+            {
+                MelonLogger.Msg("Post-modification base rotary range is now " + __instance._obp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Post-modification base rotary default range is now " + __instance._obp._defaultMaxRangeInKm + " kilometers");
             }
         }
     }
