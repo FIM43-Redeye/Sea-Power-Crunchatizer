@@ -12,5 +12,6 @@ In the UserData folder, edit the MelonPreferences.cfg file.
 # Known Issues
 - The shared launch delay for ships can be altered, but engagement timing seems to still respect it, at least if the delay is one second. I'm not sure how to resolve this; if you have ideas, make an issue or a PR.
 - Container auto-refresh refreshes INDIVIDUAL containers instead of all the ship's weapon systems containing ammunition of the desired type. This absolutely eludes me.
+- No known way to speed up animations programmatically, so ships get capped by the speed at which their anims take place for things that use anims
 
 If you want any new features, ask me, or better yet, make a PR. If I don't like the idea I won't implement it myself, but if it's in a PR I'll almost certainly do it.
