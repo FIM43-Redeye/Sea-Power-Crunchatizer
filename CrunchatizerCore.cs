@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using MelonLoader;
 using SeaPower;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using UnityEngine;
 // ReSharper disable InconsistentNaming
@@ -17,6 +19,7 @@ namespace Sea_Power_Crunchatizer
         public static MelonPreferences_Entry<bool> LogSpam;
         public static MelonPreferences_Entry<bool> BottomlessMags;
         public static MelonPreferences_Entry<bool> ContainerAutoRefresh;
+        public static MelonPreferences_Entry<bool> ForceTerrainFollowing;
         public static MelonPreferences_Entry<int> FireRateMult;
         public static MelonPreferences_Entry<int> ReactionTimeDiv;
         public static MelonPreferences_Entry<int> TargetAcqTimeDiv;
@@ -65,7 +68,10 @@ namespace Sea_Power_Crunchatizer
                 "Magazines infinitely provide ammo. Returning ammo to magazines will not add to them.";
             ContainerAutoRefresh = Config.CreateEntry("ContainerAutoRefresh", true);
             ContainerAutoRefresh.Description =
-                "Weapon containers that do not reload will automatically self-refresh at the conclusion of firing.";
+                "For a weapon system with no magazine, when the last round is shot, the entire system will reinitialize and restore ammo.";
+            ForceTerrainFollowing = Config.CreateEntry("ForceTerrainFollowing", true);
+            ForceTerrainFollowing.Description =
+                "ALL weapons assigned to the player's taskforce are now terrain following.";
             FireRateMult = Config.CreateEntry("FireRateMult", 1);
             FireRateMult.Description = "Flat multiplier for fire rate.";
             ReactionTimeDiv = Config.CreateEntry("ReactionTimeDiv", 1);
@@ -251,6 +257,25 @@ namespace Sea_Power_Crunchatizer
             MelonLogger.Msg("Player ship's weapon system is out of ammo, resetting it!");
             __instance._weaponSystem.init();
             */
+        }
+    }
+
+    [HarmonyPatch(typeof(Ammunition), MethodType.Constructor,
+        new Type[] { typeof(string), typeof(int), typeof(WeaponSystem) })]
+    public static class ModifyAmmunitionAtLoad
+    {
+        private static void Postfix(ref Ammunition __instance)
+        {
+            if (__instance._ap == null) return;
+            if (CrunchatizerCore.ForceTerrainFollowing.Value)
+            {
+                if (CrunchatizerCore.LogSpam.Value)
+                {
+                    MelonLogger.Msg("Forcing terrain following for weapon " + __instance._ap._displayedName);
+                }
+
+                __instance._ap._terrainFollowFlight = true;
+            }
         }
     }
     
