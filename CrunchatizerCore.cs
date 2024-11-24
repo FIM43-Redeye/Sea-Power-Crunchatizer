@@ -264,9 +264,9 @@ namespace Sea_Power_Crunchatizer
         new Type[] { typeof(string), typeof(int), typeof(WeaponSystem) })]
     public static class ModifyAmmunitionAtLoad
     {
-        private static void Postfix(ref Ammunition __instance)
+        private static void Postfix(ref Ammunition __instance, ref WeaponSystem associatedWeaponSystem)
         {
-            if (__instance._ap == null) return;
+            if (__instance._ap == null || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
             if (CrunchatizerCore.ForceTerrainFollowing.Value)
             {
                 if (CrunchatizerCore.LogSpam.Value)
