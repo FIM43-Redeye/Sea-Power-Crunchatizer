@@ -7,6 +7,7 @@ using SeaPower;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using ObservableComputations;
 using UnityEngine;
 // ReSharper disable InconsistentNaming
 
@@ -269,7 +270,8 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Postfix(ref Ammunition __instance, ref WeaponSystem associatedWeaponSystem)
         {
-            if (associatedWeaponSystem == null || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (associatedWeaponSystem == null ||
+                associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) { MelonLogger.Msg("Ammunition " + __instance._ap._displayedName + " does not have a base weapon system"); return;}
             switch (__instance._ap._type)
             {
                 case Ammunition.Type.Missile:
@@ -302,11 +304,11 @@ namespace Sea_Power_Crunchatizer
                 }
                 __instance._ap._terrainFollowFlight = true;
             }
-            __instance._ap._lifeTime *= CrunchatizerCore.WeaponRangeMult.Value;
-            __instance._ap._maxLaunchRangeInMiles *= CrunchatizerCore.WeaponRangeMult.Value;
-            __instance._ap._launchRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
-            __instance._ap._horizonRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
-            __instance._ap._seekerPassiveRange *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._lifeTime *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._maxLaunchRangeInMiles *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._launchRangesInUnity.y *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._horizonRangesInUnity.y *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._seekerPassiveRange *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
         }
     }
     
