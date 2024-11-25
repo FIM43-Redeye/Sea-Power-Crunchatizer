@@ -27,6 +27,7 @@ namespace Sea_Power_Crunchatizer
         public static MelonPreferences_Entry<int> MagReloadTimeDiv;
         public static MelonPreferences_Entry<int> TraverseSpeedMult;
         public static MelonPreferences_Entry<int> AircraftRangeMult;
+        public static MelonPreferences_Entry<int> WeaponRangeMult;
 
         // ReSharper disable once UnusedMember.Global
         public static void PrintObjectFields(object obj)
@@ -86,6 +87,8 @@ namespace Sea_Power_Crunchatizer
             TraverseSpeedMult.Description = "Flat multiplier for traverse speed.";
             AircraftRangeMult = Config.CreateEntry("AircraftRangeMult", 1);
             AircraftRangeMult.Description = "Flat multiplier for aircraft range.";
+            WeaponRangeMult = Config.CreateEntry("WeaponRangeMult", 1);
+            WeaponRangeMult.Description = "Flat multiplier for weapon range.";
             harmony.PatchAll();
         }
     }
@@ -262,20 +265,49 @@ namespace Sea_Power_Crunchatizer
 
     [HarmonyPatch(typeof(Ammunition), MethodType.Constructor,
         new Type[] { typeof(string), typeof(int), typeof(WeaponSystem) })]
-    public static class ModifyAmmunitionAtLoad
+    public static class ModifyAmmunitionAtLoadConstructor
     {
         private static void Postfix(ref Ammunition __instance, ref WeaponSystem associatedWeaponSystem)
         {
-            if (__instance._ap._type != Ammunition.Type.Missile || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (associatedWeaponSystem == null || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            switch (__instance._ap._type)
+            {
+                case Ammunition.Type.Missile:
+                case Ammunition.Type.Torpedo:
+                case Ammunition.Type.ASROC:
+                case Ammunition.Type.MLRS:
+                case Ammunition.Type.RBU:
+                    break;
+                case Ammunition.Type.Projectile:
+                case Ammunition.Type.Unknown:
+                case Ammunition.Type.Noisemaker:
+                case Ammunition.Type.Chaff:
+                case Ammunition.Type.Bomb:
+                case Ammunition.Type.AerialRocket:
+                case Ammunition.Type.None:
+                case Ammunition.Type.Sonobuoy:
+                case Ammunition.Type.Cluster:
+                case Ammunition.Type.MOSS:
+                case Ammunition.Type.Paratrooper:
+                case Ammunition.Type.Fueltank:
+                default:
+                    return;
+            }
+            MelonLogger.Msg("modifying ammo type: " + __instance._ap._ammunitionFileName);
             if (CrunchatizerCore.ForceTerrainFollowing.Value)
             {
                 if (CrunchatizerCore.LogSpam.Value)
                 {
                     MelonLogger.Msg("Forcing terrain following for weapon " + __instance._ap._displayedName);
                 }
-
                 __instance._ap._terrainFollowFlight = true;
             }
+            __instance._ap._lifeTime *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._maxLaunchRangeInMiles *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._launchRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._horizonRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._seekerPassiveRange *= CrunchatizerCore.WeaponRangeMult.Value;
+            __instance._ap._sharedSensorLink
         }
     }
     
