@@ -266,7 +266,7 @@ namespace Sea_Power_Crunchatizer
     {
         private static void Postfix(ref Ammunition __instance, ref WeaponSystem associatedWeaponSystem)
         {
-            if (__instance._ap == null || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (__instance._ap._type == Ammunition.Type.Missile || associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
             if (CrunchatizerCore.ForceTerrainFollowing.Value)
             {
                 if (CrunchatizerCore.LogSpam.Value)
