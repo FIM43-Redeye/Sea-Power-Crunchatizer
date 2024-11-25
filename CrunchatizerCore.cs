@@ -307,7 +307,6 @@ namespace Sea_Power_Crunchatizer
             __instance._ap._launchRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
             __instance._ap._horizonRangesInUnity.y *= CrunchatizerCore.WeaponRangeMult.Value;
             __instance._ap._seekerPassiveRange *= CrunchatizerCore.WeaponRangeMult.Value;
-            __instance._ap._sharedSensorLink
         }
     }
     
