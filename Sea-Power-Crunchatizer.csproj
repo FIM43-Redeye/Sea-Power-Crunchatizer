@@ -1,18 +1,33 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
-            Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="GamePath.props" />
+
+
     <PropertyGroup>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
         <ProjectGuid>{1F2CCF6F-72A7-4F76-971A-B693B7B26BD3}</ProjectGuid>
         <OutputType>Library</OutputType>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
         <RootNamespace>Sea_Power_Crunchatizer</RootNamespace>
         <AssemblyName>Sea_Power_Crunchatizer</AssemblyName>
-        <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
+        <TargetFramework>netstandard2.1</TargetFramework>
+
+        <!-- FIX for CS8400: Specify a C# language version that supports global using directives (C# 10.0 or greater). 'latest' is often good. -->
+        <LangVersion>latest</LangVersion>
+
+        <!-- FIX for CS0579: Disable automatic AssemblyInfo generation by the SDK, as you have Properties\AssemblyInfo.cs -->
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+        <!-- Optional modern C# project settings (kept for convenience, but you could remove if you don't want them) -->
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <NoWarn>$(NoWarn);MSB3277</NoWarn>
+
+        <!-- These were removed in the last revision as they are often redundant in SDK-style projects, keeping it clean -->
+        <!-- <AppDesignerFolder>Properties</AppDesignerFolder> -->
+        <!-- <FileAlignment>512</FileAlignment> -->
     </PropertyGroup>
+
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugSymbols>true</DebugSymbols>
@@ -23,6 +38,7 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
         <DebugType>pdbonly</DebugType>
@@ -32,557 +48,42 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+
     <ItemGroup>
+        <None Include="CrunchatizerCore_Melon.cs.bak"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Explicit references to game/modding specific DLLs (these are correct) -->
         <Reference Include="0Harmony">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\MelonLoader\net35\0Harmony.dll</HintPath>
+            <HintPath>$(GameDir)\BepInEx\core\0Harmony.dll</HintPath>
         </Reference>
-        <Reference Include="AmplifyBloom">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\AmplifyBloom.dll</HintPath>
+        <Reference Include="BepInEx">
+            <HintPath>$(GameDir)\BepInEx\core\BepInEx.dll</HintPath>
         </Reference>
-        <Reference Include="AmplifyColor">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\AmplifyColor.dll</HintPath>
-        </Reference>
-        <Reference Include="andywiecko.BurstTriangulator">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\andywiecko.BurstTriangulator.dll</HintPath>
-        </Reference>
-        <Reference Include="Assets">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Assets.dll</HintPath>
-        </Reference>
-        <Reference Include="AstarPathfindingProject">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\AstarPathfindingProject.dll</HintPath>
-        </Reference>
-        <Reference Include="Clipper2Lib">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Clipper2Lib.dll</HintPath>
-        </Reference>
-        <Reference Include="com.rlabrecque.steamworks.net">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\com.rlabrecque.steamworks.net.dll</HintPath>
-        </Reference>
-        <Reference Include="Drawing">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Drawing.dll</HintPath>
-        </Reference>
-        <Reference Include="GUPS.EasyPerformanceMonitor">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\GUPS.EasyPerformanceMonitor.dll</HintPath>
-        </Reference>
-        <Reference Include="GUPS.EasyPerformanceMonitor.Demo">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\GUPS.EasyPerformanceMonitor.Demo.dll</HintPath>
-        </Reference>
-        <Reference Include="io.sentry.unity.runtime">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\io.sentry.unity.runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="Libraries">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Libraries.dll</HintPath>
-        </Reference>
-        <Reference Include="MathNet.Numerics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\MathNet.Numerics.dll</HintPath>
-        </Reference>
-        <Reference Include="MelonLoader">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\MelonLoader\net35\MelonLoader.dll</HintPath>
-        </Reference>
-        <Reference Include="Mono.Security">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Mono.Security.dll</HintPath>
-        </Reference>
-        <Reference Include="mscorlib">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\mscorlib.dll</HintPath>
-        </Reference>
-        <Reference Include="netstandard">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\netstandard.dll</HintPath>
-        </Reference>
-        <Reference Include="Newtonsoft.Json">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Newtonsoft.Json.dll</HintPath>
-        </Reference>
-        <Reference Include="Noesis.NoesisGUI">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Noesis.NoesisGUI.dll</HintPath>
-        </Reference>
-        <Reference Include="PackageTools">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\PackageTools.dll</HintPath>
-        </Reference>
-        <Reference Include="ParadoxNotion">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\ParadoxNotion.dll</HintPath>
-        </Reference>
-        <Reference Include="Pathfinding.ClipperLib">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Pathfinding.ClipperLib.dll</HintPath>
-        </Reference>
-        <Reference Include="Pathfinding.Ionic.Zip.Reduced">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Pathfinding.Ionic.Zip.Reduced.dll</HintPath>
-        </Reference>
-        <Reference Include="Pathfinding.Poly2Tri">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Pathfinding.Poly2Tri.dll</HintPath>
-        </Reference>
-        <Reference Include="Plugins">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Plugins.dll</HintPath>
+        <Reference Include="BepInEx.Harmony">
+            <HintPath>$(GameDir)\BepInEx\core\BepInEx.Harmony.dll</HintPath>
         </Reference>
         <Reference Include="Seapower-Scripts">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Seapower-Scripts.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.Microsoft.Bcl.AsyncInterfaces">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Buffers">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Buffers.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Collections.Immutable">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Collections.Immutable.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Memory">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Memory.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Numerics.Vectors">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Numerics.Vectors.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Reflection.Metadata">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Reflection.Metadata.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Runtime.CompilerServices.Unsafe">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Text.Encodings.Web">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Text.Encodings.Web.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Text.Json">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Text.Json.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.System.Threading.Tasks.Extensions">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.System.Threading.Tasks.Extensions.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.Unity">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.Unity.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.Unity.iOS">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.Unity.iOS.dll</HintPath>
-        </Reference>
-        <Reference Include="Sentry.Unity.Native">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Sentry.Unity.Native.dll</HintPath>
-        </Reference>
-        <Reference Include="SingularityGroup.HotReload.Runtime">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\SingularityGroup.HotReload.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="SingularityGroup.HotReload.Runtime.Public">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\SingularityGroup.HotReload.Runtime.Public.dll</HintPath>
-        </Reference>
-        <Reference Include="System"/>
-        <Reference Include="System.Collections">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Collections.dll</HintPath>
-        </Reference>
-        <Reference Include="System.ComponentModel.Composition">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.ComponentModel.Composition.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Configuration">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Configuration.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Core"/>
-        <Reference Include="System.Data"/>
-        <Reference Include="System.Data.DataSetExtensions">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Data.DataSetExtensions.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Drawing">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Drawing.dll</HintPath>
-        </Reference>
-        <Reference Include="System.EnterpriseServices">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.EnterpriseServices.dll</HintPath>
-        </Reference>
-        <Reference Include="System.IO.Compression">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.IO.Compression.dll</HintPath>
-        </Reference>
-        <Reference Include="System.IO.Compression.FileSystem">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.IO.Compression.FileSystem.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Numerics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Numerics.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Runtime">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Runtime.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Runtime.Extensions">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Runtime.Extensions.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Runtime.InteropServices">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Runtime.InteropServices.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Runtime.Serialization">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Runtime.Serialization.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Security">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Security.dll</HintPath>
-        </Reference>
-        <Reference Include="System.ServiceModel.Internals">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.ServiceModel.Internals.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Transactions">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Transactions.dll</HintPath>
-        </Reference>
-        <Reference Include="System.ValueTuple">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.ValueTuple.dll</HintPath>
-        </Reference>
-        <Reference Include="System.Xml"/>
-        <Reference Include="System.Xml.Linq">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\System.Xml.Linq.dll</HintPath>
+            <HintPath>$(GameDir)\Sea Power_Data\Managed\Seapower-Scripts.dll</HintPath>
         </Reference>
         <Reference Include="UniRx">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UniRx.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.AI.Navigation">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.AI.Navigation.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Analytics.DataPrivacy">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Analytics.DataPrivacy.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Burst">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Burst.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Burst.Unsafe">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Burst.Unsafe.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Collections">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Collections.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Collections.LowLevel.ILSupport">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Collections.LowLevel.ILSupport.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Deformations">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Deformations.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Entities">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Entities.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Entities.Hybrid">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Entities.Hybrid.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Entities.Hybrid.HybridComponents">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Entities.Hybrid.HybridComponents.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Entities.UI">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Entities.UI.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.InputSystem">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.InputSystem.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.InputSystem.ForUI">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.InputSystem.ForUI.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.InternalAPIEngineBridge.002">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.InternalAPIEngineBridge.002.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.InternalAPIEngineBridge.012">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.InternalAPIEngineBridge.012.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Jobs">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Jobs.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Mathematics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Mathematics.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Mathematics.Extensions">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Mathematics.Extensions.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Mathematics.Extensions.Hybrid">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Mathematics.Extensions.Hybrid.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.MemoryProfiler">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.MemoryProfiler.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Platforms.Common">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Platforms.Common.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Platforms.UI">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Platforms.UI.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Profiling.Core">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Profiling.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Scenes">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Scenes.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.ScriptableBuildPipeline">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.ScriptableBuildPipeline.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Serialization">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Serialization.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Analytics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Analytics.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.CloudDiagnostics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.CloudDiagnostics.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Analytics">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Analytics.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Configuration">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Configuration.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Device">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Device.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Environments">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Environments.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Environments.Internal">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Environments.Internal.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Internal">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Internal.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Networking">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Networking.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Registration">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Registration.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Scheduler">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Scheduler.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Telemetry">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Telemetry.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Services.Core.Threading">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Services.Core.Threading.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.TextMeshPro">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.TextMeshPro.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Timeline">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Timeline.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Transforms">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Transforms.dll</HintPath>
-        </Reference>
-        <Reference Include="Unity.Transforms.Hybrid">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Unity.Transforms.Hybrid.dll</HintPath>
+            <HintPath>$(GameDir)\Sea Power_Data\Managed\UniRx.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AccessibilityModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AccessibilityModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AIModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AndroidJNIModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AndroidJNIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AnimationModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ARModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ARModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AssetBundleModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.AudioModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ClothModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ClothModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ClusterInputModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ClusterInputModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ClusterRendererModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ClusterRendererModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ContentLoadModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ContentLoadModule.dll</HintPath>
+            <HintPath>$(GameDir)\Sea Power_Data\Managed\UnityEngine.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+            <HintPath>$(GameDir)\Sea Power_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
         </Reference>
-        <Reference Include="UnityEngine.CrashReportingModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.CrashReportingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.DirectorModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.DirectorModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.DSPGraphModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.DSPGraphModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.GameCenterModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.GameCenterModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.GIModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.GIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.GridModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.GridModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.HotReloadModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.HotReloadModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ImageConversionModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.IMGUIModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.InputLegacyModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.InputModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.InputModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.JSONSerializeModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.LocalizationModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.LocalizationModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.NVIDIAModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.NVIDIAModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ParticleSystemModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.PerformanceReportingModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.PerformanceReportingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.Physics2DModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.Physics2DModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.PhysicsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ProfilerModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ProfilerModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.PropertiesModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.PropertiesModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.ScreenCaptureModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.ScreenCaptureModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SharedInternalsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SharedInternalsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SpatialTracking">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SpatialTracking.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SpriteMaskModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SpriteMaskModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SpriteShapeModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SpriteShapeModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.StreamingModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.StreamingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SubstanceModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SubstanceModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.SubsystemsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.SubsystemsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TerrainModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TerrainModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TerrainPhysicsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TerrainPhysicsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TextCoreFontEngineModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TextCoreTextEngineModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TextRenderingModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TilemapModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TilemapModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.TLSModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.TLSModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UI.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UIElementsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UIModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UIModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UmbraModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UmbraModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityAnalyticsCommonModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityAnalyticsModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityAnalyticsModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityConnectModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityConnectModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityCurlModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityCurlModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityTestProtocolModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityTestProtocolModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityWebRequestAudioModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityWebRequestModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityWebRequestTextureModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.UnityWebRequestWWWModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.VehiclesModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.VehiclesModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.VFXModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.VFXModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.VideoModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.VideoModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.VirtualTexturingModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.VirtualTexturingModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.VRModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.VRModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.WindModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.WindModule.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.XR.LegacyInputHelpers">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.XR.LegacyInputHelpers.dll</HintPath>
-        </Reference>
-        <Reference Include="UnityEngine.XRModule">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\UnityEngine.XRModule.dll</HintPath>
-        </Reference>
-        <Reference Include="Vectrosity">
-          <HintPath>..\..\..\..\Games\Steam\steamapps\common\Sea Power\Sea Power_Data\Managed\Vectrosity.dll</HintPath>
-        </Reference>
+        <!-- IMPORTANT: Add any other UnityEngine.*Module.dlls that your code directly references.
+             The initial log showed many, but only those explicitly used by *your* code need to be here.
+             If you encounter `The type or namespace name 'UI' could not be found` errors later,
+             you'll need to add the corresponding `UnityEngine.UIModule.dll` reference. -->
     </ItemGroup>
-    <ItemGroup>
-        <Compile Include="CrunchatizerCore.cs" />
-        <Compile Include="Properties\AssemblyInfo.cs"/>
-    </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-         Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-    -->
+
+
+
+
 
 </Project>

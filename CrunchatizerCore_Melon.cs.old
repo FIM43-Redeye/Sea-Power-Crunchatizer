@@ -1,0 +1,1076 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Text;
+using HarmonyLib;
+using JetBrains.Annotations;
+using MelonLoader;
+using SeaPower;
+using UnityEngine;
+
+// ReSharper disable InconsistentNaming
+
+namespace Sea_Power_Crunchatizer
+{
+    public class CrunchatizerCore : MelonMod
+    {
+        // ReSharper disable once MemberCanBePrivate.Global
+        public static MelonPreferences_Category Config;
+        public static MelonPreferences_Entry<bool> LogSpam;
+        public static MelonPreferences_Entry<bool> UnlimitedRepair;
+        public static MelonPreferences_Entry<bool> BottomlessMags;
+        public static MelonPreferences_Entry<bool> ContainerAutoRefresh;
+        public static MelonPreferences_Entry<bool> AircraftInfiniteAmmo;
+        public static MelonPreferences_Entry<bool> ForceTerrainFollowing;
+        public static MelonPreferences_Entry<bool> EnhanceMissileFeatures;
+        public static MelonPreferences_Entry<int> FireRateMult;
+        public static MelonPreferences_Entry<int> ReactionTimeDiv;
+        public static MelonPreferences_Entry<int> TargetAcqTimeDiv;
+        public static MelonPreferences_Entry<int> PreLaunchDelayDiv;
+        public static MelonPreferences_Entry<int> MagReloadTimeDiv;
+        public static MelonPreferences_Entry<int> TraverseSpeedMult;
+        public static MelonPreferences_Entry<int> AircraftRangeMult;
+        public static MelonPreferences_Entry<int> WeaponRangeMult;
+
+        // ReSharper disable once UnusedMember.Global
+        public static void PrintObjectFields(object obj)
+        {
+            if (obj == null)
+            {
+                MelonLogger.Msg("Thing itself is null");
+                return;
+            }
+
+            MelonLogger.Msg($"Fields of object of type {obj.GetType().Name}:");
+
+            // Get all instance fields (public and non-public)
+            var fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            foreach (var field in fields)
+            {
+                // Get the field value
+                var value = field.GetValue(obj);
+
+                // Safely convert the value to string to handle potential nulls or unprintable types
+                var valueString = value != null ? value.ToString() : "null";
+
+                // Print field name and its value
+                MelonLogger.Msg($"{field.Name}: {valueString}");
+            }
+        }
+
+        public override void OnInitializeMelon()
+        {
+            // Set up all the garbage config stuff
+            var harmony = new HarmonyLib.Harmony("net.particle.sea_power_crunchatizer");
+            MelonLogger.Msg("Initializing CrunchatizerConfig");
+            Config = MelonPreferences.CreateCategory("CrunchatizerConfig");
+            LogSpam = Config.CreateEntry("LogSpam", true);
+            LogSpam.Description =
+                "Enables/disables ALL logging messages!";
+            UnlimitedRepair = Config.CreateEntry("UnlimitedRepair", true);
+            UnlimitedRepair.Description =
+                "Player units can repair infinitely after damage.";
+            BottomlessMags = Config.CreateEntry("BottomlessMags", true);
+            BottomlessMags.Description =
+                "Magazines infinitely provide ammo. Returning ammo to magazines will not add to them.";
+            ContainerAutoRefresh = Config.CreateEntry("ContainerAutoRefresh", true);
+            ContainerAutoRefresh.Description =
+                "For a weapon system with no magazine, when the last round is shot, the entire system will reinitialize and restore ammo.";
+            AircraftInfiniteAmmo = Config.CreateEntry("AircraftInfiniteAmmo", true);
+            AircraftInfiniteAmmo.Description =
+                "Aircraft will instantly refill hardpoints when they're out of ammo..";
+            ForceTerrainFollowing = Config.CreateEntry("ForceTerrainFollowing", true);
+            ForceTerrainFollowing.Description =
+                "ALL weapons assigned to the player's taskforce are now terrain following.";
+            EnhanceMissileFeatures = Config.CreateEntry("EnhanceMissileFeatures", true);
+            EnhanceMissileFeatures.Description =
+                "ALL weapons assigned to the player's taskforce will receive various improvements.";
+            FireRateMult = Config.CreateEntry("FireRateMult", 1);
+            FireRateMult.Description = "Flat multiplier for fire rate.";
+            ReactionTimeDiv = Config.CreateEntry("ReactionTimeDiv", 1);
+            ReactionTimeDiv.Description = "Flat divisor for reaction time.";
+            TargetAcqTimeDiv = Config.CreateEntry("TargetAcqTimeDiv", 1);
+            TargetAcqTimeDiv.Description = "Flat divisor for target acquisition time.";
+            PreLaunchDelayDiv = Config.CreateEntry("PreLaunchDelayDiv", 1);
+            PreLaunchDelayDiv.Description = "Flat divisor for pre-launch delay.";
+            MagReloadTimeDiv = Config.CreateEntry("MagReloadTimeDiv", 1);
+            MagReloadTimeDiv.Description = "Flat divisor for magazine reload time.";
+            TraverseSpeedMult = Config.CreateEntry("TraverseSpeedMult", 1);
+            TraverseSpeedMult.Description = "Flat multiplier for traverse speed.";
+            AircraftRangeMult = Config.CreateEntry("AircraftRangeMult", 1);
+            AircraftRangeMult.Description = "Flat multiplier for aircraft range.";
+            WeaponRangeMult = Config.CreateEntry("WeaponRangeMult", 1);
+            WeaponRangeMult.Description = "Flat multiplier for weapon range.";
+            harmony.PatchAll();
+        }
+    }
+
+    [HarmonyPatch(typeof(Compartments))] // Use the correct class type here
+    [HarmonyPatch("CheckDCTeamsAllocation")] // Target the specific method by name
+    public static class Compartments_CheckDCTeamsAllocation_RerunPatch
+    {
+        [HarmonyPrefix]
+        public static bool Prefix(Compartments __instance) // __instance is the instance of the Compartments class
+        {
+            // Check if ship is player
+            if (__instance._baseObject._taskforce.Side == Taskforce.TfType.Player)
+            {
+                // --- Execute the *entire* original method's logic here ---
+                // NOTE: All references to 'this' from the original code
+                // MUST be replaced with '__instance'.
+
+                if (__instance._isSinking) // Use __instance
+                {
+                    // Original logic had 'return;' here, so we do nothing further in this block
+                }
+                else if (__instance.DamageControlTeamsNumbers[5] < 1) // Use __instance
+                {
+                    // Original logic had 'return;' here, so we do nothing further in this block
+                }
+                else // Only proceed if not sinking and teams are available
+                {
+                    int num = -1;
+                    float num2 = 0f;
+                    // Check Flooding Rate
+                    for (int i = 0; i < __instance._compartmentsCount; i++) // Use __instance
+                    {
+                        // Use __instance for accessing compartment arrays
+                        float num3 =
+                            ((__instance._portCompartments[i]._floodingRate >
+                              __instance._starboardCompartments[i]._floodingRate)
+                                ? __instance._portCompartments[i]._floodingRate
+                                : __instance._starboardCompartments[i]._floodingRate);
+                        if (num2 < num3)
+                        {
+                            num2 = num3;
+                            num = i;
+                        }
+                    }
+
+                    if (num > -1)
+                    {
+                        __instance.SendDCTeamToCompartment(num); // Use __instance
+                    }
+                    else // Only check next criteria if previous wasn't met
+                    {
+                        num = -1; // Reset for next check
+                        num2 = 0f;
+                        // Check Fire Severity
+                        for (int j = 0; j < __instance._compartmentsCount; j++) // Use __instance
+                        {
+                            float num3 = __instance._systemCompartments[j].FireSeverity; // Use __instance
+                            if (num2 < num3)
+                            {
+                                num2 = num3;
+                                num = j;
+                            }
+                        }
+
+                        if (num > -1)
+                        {
+                            __instance.SendDCTeamToCompartment(num); // Use __instance
+                        }
+                        else // Only check next criteria if previous wasn't met
+                        {
+                            num = -1; // Reset for next check
+                            num2 = 0f;
+                            // Check Fire Grow Rate
+                            for (int k = 0; k < __instance._compartmentsCount; k++) // Use __instance
+                            {
+                                float num3 = __instance._systemCompartments[k]._fireGrowRate; // Use __instance
+                                if (num2 < num3)
+                                {
+                                    num2 = num3;
+                                    num = k;
+                                }
+                            }
+
+                            if (num > -1)
+                            {
+                                __instance.SendDCTeamToCompartment(num); // Use __instance
+                            }
+                            else // Only check next criteria if previous wasn't met
+                            {
+                                num = -1; // Reset for next check
+                                num2 = 0f;
+                                // Check Flooding Delta
+                                for (int l = 0; l < __instance._compartmentsCount; l++) // Use __instance
+                                {
+                                    float num3 =
+                                        ((__instance._portCompartments[l].FloodingDelta >
+                                          __instance._starboardCompartments[l].FloodingDelta)
+                                            ? __instance._portCompartments[l].FloodingDelta
+                                            : __instance._starboardCompartments[l].FloodingDelta); // Use __instance
+                                    if (num2 < num3)
+                                    {
+                                        num2 = num3;
+                                        num = l;
+                                    }
+                                }
+
+                                if (num > -1)
+                                {
+                                    __instance.SendDCTeamToCompartment(num); // Use __instance
+                                }
+                                else // Only check next criteria if previous wasn't met
+                                {
+                                    num = -1; // Reset for next check
+                                    num2 = 0f;
+                                    // Check Integrity Delta
+                                    for (int m = 0; m < __instance._compartmentsCount; m++) // Use __instance
+                                    {
+                                        float num3 =
+                                            ((__instance._portCompartments[m].IntegrityDelta >
+                                              __instance._starboardCompartments[m].IntegrityDelta)
+                                                ? __instance._portCompartments[m].IntegrityDelta
+                                                : __instance._starboardCompartments[m]
+                                                    .IntegrityDelta); // Use __instance
+                                        if (num2 < num3)
+                                        {
+                                            num2 = num3;
+                                            num = m;
+                                        }
+                                    }
+
+                                    if (num > -1)
+                                    {
+                                        __instance.SendDCTeamToCompartment(num); // Use __instance
+                                    }
+                                    else // Only check final criteria if previous wasn't met
+                                    {
+                                        num = -1; // Reset for next check
+                                        num2 = 100f;
+                                        // Check Repairable Systems Integrity
+                                        for (int n = 0; n < __instance._compartmentsCount; n++) // Use __instance
+                                        {
+                                            // Assuming BaseSystem type is accessible via using directive or full name
+                                            foreach (BaseSystem baseSystem in __instance._systemCompartments[n]
+                                                         ._listOfSystems) // Use __instance
+                                            {
+                                                if (baseSystem.Repairable)
+                                                {
+                                                    float num3 = baseSystem.CurrentIntegrityPercent;
+                                                    if (num2 > num3) // Finding the minimum integrity here
+                                                    {
+                                                        num2 = num3;
+                                                        num = n;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (num > -1)
+                                        {
+                                            __instance.SendDCTeamToCompartment(num); // Use __instance
+                                        }
+                                        // End of original method logic execution
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                // --- IMPORTANT ---
+                // Since we executed the logic here, we PREVENT the original method from running.
+                return false;
+            }
+            else
+            {
+                // Condition not met, allow the original method to run.
+                return true;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Compartments))]
+[HarmonyPatch("RepairSystems", new Type[] { typeof(int) })]
+public static class Compartments_RepairSystems_PlayerSkipDamageTypeCheckPatch
+{
+    [HarmonyPrefix]
+    public static bool Prefix(Compartments __instance, int index, ref bool __result)
+    {
+        // --- Logging Block (keep as is, it's helpful) ---
+        try
+        {
+            // (Your existing logging code here - unchanged)
+            StringBuilder sb = new StringBuilder();
+            sb.Append(
+                $"[RepairSystemsPatch] Prefix running for Compartments of vessel: {__instance._baseObject?.name ?? "N/A"} Index: {index}. "); // Safer null check
+
+            bool isPlayer = false;
+            if (__instance._baseObject != null && __instance._baseObject._taskforce != null)
+            {
+                isPlayer = __instance._baseObject._taskforce.Side == Taskforce.TfType.Player;
+                sb.Append($"Is Player: {isPlayer}. ");
+            } else { sb.Append("Player check failed (_baseObject or _taskforce is null). "); }
+
+            if (__instance._systemCompartments == null) { sb.Append("_systemCompartments is NULL. "); }
+            else if (index < 0 || index >= __instance._systemCompartments.Count()) { sb.Append($"Index {index} OOB (Count: {__instance._systemCompartments.Count()}). "); }
+            else
+            {
+                SystemCompartment sysComp = __instance._systemCompartments[index];
+                if (sysComp == null) { sb.Append($"_systemCompartments[{index}] is NULL. "); }
+                else
+                {
+                    BaseSystem currentPriority = sysComp.SystemPrioritisedForRepair;
+                    if (currentPriority == null) { sb.Append("SystemPrioritisedForRepair is NULL at prefix start. "); }
+                    else
+                    {
+                        sb.Append($"SystemPrioritisedForRepair = '{currentPriority._systemName ?? currentPriority.GetType().Name}'. ");
+                        sb.Append($"CurrentIntegrity={currentPriority.CurrentIntegrity}, MaxIntegrity={currentPriority._maxIntegrity}. "); // Log integrity values
+                        // (Keep other property logs if needed)
+                    }
+                }
+            }
+             //MelonLogger.Msg(sb.ToString());
+        } catch (Exception ex) { MelonLogger.Error($"[RepairSystemsPatch] Error during prefix logging: {ex}"); }
+
+
+        // --- Main Patch Logic ---
+        if (__instance._baseObject != null &&
+            __instance._baseObject._taskforce != null &&
+            __instance._baseObject._taskforce.Side == Taskforce.TfType.Player)
+        {
+            // --- Player-Specific Logic ---
+            __result = false; // Default result
+
+            // Check compartment validity upfront
+            if (__instance._systemCompartments == null || index < 0 || index >= __instance._systemCompartments.Count() || __instance._systemCompartments[index] == null)
+            {
+                 MelonLogger.Warning($"[RepairSystemsPatch] Invalid compartment data for index {index}. Skipping repair logic.");
+                 return false; // Prevent original method, nothing to do here.
+            }
+
+            SystemCompartment currentSysCompartment = __instance._systemCompartments[index];
+
+            // --- Logic for Prioritised System (Modified) ---
+            BaseSystem prioritizedSystem = currentSysCompartment.SystemPrioritisedForRepair;
+            if (prioritizedSystem != null)
+            {
+                // --- Is it already repaired? ---
+                if (prioritizedSystem.CurrentIntegrity >= prioritizedSystem._maxIntegrity) // Or >= 1.0f if normalized
+                {
+                    MelonLogger.Msg($"[RepairSystemsPatch] Player Logic: Prioritized system '{prioritizedSystem._systemName ?? prioritizedSystem.GetType().Name}' is already fully repaired ({prioritizedSystem.CurrentIntegrity}/{prioritizedSystem._maxIntegrity}). Clearing priority.");
+                    // Clear priority as it's done.
+                    currentSysCompartment.SystemPrioritisedForRepair = null;
+                     // Don't return yet, let non-priority check run if needed. __result remains false.
+                }
+                else // It IS repairable AND needs repair
+                {
+                    // Apply repair
+                    float repairAmount = (float)__instance.DamageControlTeamsNumbers[index]
+                                         * __instance._baseObject._crew._systemRepair
+                                         * GameTime.fixedDeltaTime;
+
+                    // Store integrity before repair for logging/debugging if needed
+                    // float oldIntegrity = prioritizedSystem.CurrentIntegrity;
+
+                    prioritizedSystem.CurrentIntegrity += repairAmount;
+                    // --- CLAMPING: Ensure integrity doesn't exceed max ---
+                    prioritizedSystem.CurrentIntegrity = Math.Min(prioritizedSystem.CurrentIntegrity, prioritizedSystem._maxIntegrity); // Or Math.Min(..., 1.0f)
+
+                    __result = true; // Repair happened
+                    MelonLogger.Msg(
+                        $"[RepairSystemsPatch] Player Logic: Repaired prioritized system '{prioritizedSystem._systemName ?? prioritizedSystem.GetType().Name}' by {repairAmount} (Now: {prioritizedSystem.CurrentIntegrity}/{prioritizedSystem._maxIntegrity})");
+
+                    // Since we repaired the priority target, we are done for this compartment this frame.
+                    return false; // Skip original, skip rest of prefix
+                }
+            } // end if prioritizedSystem != null
+
+
+            // --- Logic for Other Systems in Compartment (Modified) ---
+            // This part runs if:
+            // 1. No system was prioritized initially.
+            // 2. A system was prioritized but was unrepairable (priority cleared).
+            // 3. A system was prioritized but was already fully repaired (priority cleared).
+            // AND no repair was actually performed yet (__result is still false)
+            if (!__result)
+            {
+                foreach (BaseSystem baseSystem in currentSysCompartment._listOfSystems)
+                {
+                    
+                        // --- ADDED CHECK: Is it already repaired? ---
+                        if (baseSystem.CurrentIntegrity < baseSystem._maxIntegrity) // Or < 1.0f if normalized
+                        {
+                            // Needs repair! Apply it.
+                            float repairAmount = (float)__instance.DamageControlTeamsNumbers[index]
+                                                 * __instance._baseObject._crew._systemRepair
+                                                 * GameTime.fixedDeltaTime;
+
+                            // float oldIntegrity = baseSystem.CurrentIntegrity;
+                            baseSystem.CurrentIntegrity += repairAmount;
+                            // --- CLAMPING: Ensure integrity doesn't exceed max ---
+                            baseSystem.CurrentIntegrity = Math.Min(baseSystem.CurrentIntegrity, baseSystem._maxIntegrity); // Or Math.Min(..., 1.0f)
+
+                            __result = true; // Repair happened
+                            MelonLogger.Msg(
+                                $"[RepairSystemsPatch] Player Logic: Repaired non-priority system '{baseSystem._systemName ?? baseSystem.GetType().Name}' by {repairAmount} (Now: {baseSystem.CurrentIntegrity}/{baseSystem._maxIntegrity})");
+
+                            // Found a system to repair, stop searching in this compartment for this frame.
+                            return false; // Skip original, skip rest of prefix loop
+                        }
+                        // else: System is repairable in principle, but already fully repaired. Continue loop.
+                    // else: System is not repairable or is destroyed permanently. Continue loop.
+                }
+            } // end logic for other systems (if !__result)
+
+
+            // If we reach here, it means:
+            // - We are in the player logic branch.
+            // - EITHER a prioritized system existed but was unrepairable or already fixed, AND no other system needed repair.
+            // - OR no system was prioritized, AND no other system needed repair.
+            // In all these cases, no repair work was done *this frame* (__result is false).
+            // We still prevent the original method because we handled the player logic completely.
+            return false;
+        }
+        else // --- Not Player Ship ---
+        {
+            // Allow the original method to run unmodified.
+            return true;
+        }
+    }
+}
+
+    [HarmonyPatch(typeof(SystemCompartment))]
+// Target the 'set' method of the property
+    [HarmonyPatch("SystemPrioritisedForRepair", MethodType.Setter)]
+    public static class SystemCompartment_SystemPrioritisedForRepair_Setter_LogPatch
+    {
+        // Postfix runs *after* the original setter code completes.
+        // __instance is the SystemCompartment instance.
+        // 'value' is the BaseSystem that was passed *into* the setter.
+        public static void Postfix(SystemCompartment __instance, BaseSystem value)
+        {
+            try // Use try/catch for safety in logging patches
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(
+                    $"[PriorityPatch] SystemPrioritisedForRepair Setter called on {__instance._object.name}."); // Identify instance if possible
+
+                // Log the system being passed IN
+                if (value == null)
+                {
+                    sb.Append(" Incoming value: null.");
+                }
+                else
+                {
+                    // Add identifying info for the system if available (e.g., Name, ID)
+                    sb.Append($" Incoming value: System '{value._systemName ?? value.GetType().Name}'.");
+                    sb.Append(
+                        $" IsDestroyed={value.IsDestroyed}, AlwaysRepairable={value._alwaysRepairable}, Repairable={value.Repairable}.");
+                }
+
+                // Log the state *after* the setter ran
+                BaseSystem currentPriority =
+                    Traverse.Create(__instance).Field<BaseSystem>("_systemPrioritisedForRepair")
+                        .Value; // Read the backing field directly
+                if (currentPriority == null)
+                {
+                    sb.Append(" Resulting _systemPrioritisedForRepair: null.");
+                }
+                else
+                {
+                    sb.Append(
+                        $" Resulting _systemPrioritisedForRepair: System '{currentPriority._systemName ?? currentPriority.GetType().Name}'.");
+                    if (currentPriority.damageSummary != null)
+                    {
+                        sb.Append($" DamageSummary.IsPriority={currentPriority.damageSummary.IsPriority}.");
+                    }
+                    else
+                    {
+                        sb.Append(" DamageSummary is NULL.");
+                    }
+                }
+
+                // Use your preferred logging method (MelonLogger.Msg, BepInEx Log, etc.)
+                MelonLogger.Msg(sb.ToString());
+            }
+            catch (System.Exception ex)
+            {
+                MelonLogger.Error($"[PriorityPatch] Error in SystemPrioritisedForRepair setter Postfix: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(BaseSystem), "init")]
+    public static class UnlimitedRepair_PatchBaseSystem
+    {
+        public static void Postfix(BaseSystem __instance)
+        {
+            // It's good practice to check __instance itself first, though Harmony usually ensures it's not null in Postfix
+            if (__instance == null)
+            {
+                MelonLogger.Warning("UnlimitedRepair_PatchBaseSystem Postfix called with null __instance!");
+                return;
+            }
+
+            // Check the setting first, then ensure _baseObject and _taskforce are not null before accessing their members
+            if (CrunchatizerCore.UnlimitedRepair.Value &&
+                __instance._baseObject != null && // Check if _baseObject exists
+                __instance._baseObject._taskforce != null && // Check if _taskforce exists
+                __instance._baseObject._taskforce.Side == Taskforce.TfType.Player && // Now safe to check Side
+                __instance._baseObject._type != ObjectBase.ObjectType.Aircraft) // Now safe to check Type
+            {
+                // Now that we know _baseObject is not null, we can safely log its name
+                // Still use the null-conditional/coalescing for _systemName and _baseObject.name just in case *those* specific properties can be null
+                MelonLogger.Msg(
+                    $"Applying UnlimitedRepair to BaseSystem {__instance._systemName ?? "null"} of vessel {__instance._baseObject?.name ?? "null"}");
+
+                __instance._alwaysRepairable = true;
+            }
+        }
+    }
+
+    // Patch targeting the MaxAllowedIntegrity getter
+    [HarmonyPatch(typeof(FloodingCompartment), "get_MaxAllowedIntegrity")]
+    public static class UnlimitedRepair_FloodingCompartment_MaxAllowedIntegrityPatch
+    {
+        // Prefix runs before the original getter code.
+        // We use 'ref float __result' to directly set the return value of the getter.
+        // We return 'false' to skip the original getter's code when our condition is met.
+        // We return 'true' to let the original getter run normally otherwise.
+        public static bool Prefix(FloodingCompartment __instance, ref float __result)
+        {
+            try // Safety first!
+            {
+                // Check if the unlimited repair cheat should apply
+                if (CrunchatizerCore.UnlimitedRepair.Value &&
+                    __instance != null && // Null check instance
+                    __instance._compartments != null && // Null check compartments
+                    __instance._compartments._baseObject != null && // Null check base object
+                    __instance._compartments._baseObject._taskforce != null && // Null check taskforce
+                    __instance._compartments._baseObject._taskforce.Side == Taskforce.TfType.Player &&
+                    (__instance._compartments._baseObject._type == ObjectBase.ObjectType.Vessel ||
+                     __instance._compartments._baseObject._type == ObjectBase.ObjectType.Submarine))
+                {
+                    // Cheat active for a player unit:
+                    // Force the result to be the absolute maximum integrity
+                    __result = __instance._maxIntegrity;
+
+                    // Skip the original getter logic entirely
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                MelonLogger.Error($"Error in UnlimitedRepair_MaxAllowedIntegrityPatch Prefix: {ex}");
+                // Let original run if error occurs
+                return true;
+            }
+
+            // If cheat is off, or not player, or error occurred:
+            // Let the original getter logic run
+            return true;
+        }
+    }
+
+    // First copy of decreaseAmmunitionCount (there are two)
+    [HarmonyPatch(typeof(WeaponMagazineSystem), "decreaseAmmunitionCount", typeof(string), typeof(bool))]
+    public static class BottomlessMagsDecrementSingle
+    {
+        [UsedImplicitly]
+        private static bool Prefix(ref WeaponMagazineSystem __instance)
+        {
+            switch (CrunchatizerCore.BottomlessMags.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    return true;
+            }
+
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // Abort the function and skip removing ammo
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Caught a player ship trying to remove ammo, skipping!");
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+
+    // Second copy
+    [HarmonyPatch(typeof(WeaponMagazineSystem), "decreaseAmmunitionCount", typeof(string), typeof(int),
+        typeof(bool))]
+    public static class BottomlessMagsDecrementMultiple
+    {
+        [UsedImplicitly]
+        private static bool Prefix(ref WeaponMagazineSystem __instance)
+        {
+            switch (CrunchatizerCore.BottomlessMags.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    return true;
+            }
+
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // Abort the function and skip removing ammo
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Caught a player ship trying to remove ammo, skipping!");
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+
+    // Magazine count control for base WeaponSystem
+    [HarmonyPatch(typeof(WeaponSystem), "decreaseMagazineAmmoCount", typeof(string), typeof(int), typeof(bool))]
+    public static class BottomlessMagsDecrementMags
+    {
+        [UsedImplicitly]
+        private static bool Prefix(ref WeaponMagazineSystem __instance)
+        {
+            switch (CrunchatizerCore.BottomlessMags.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    return true;
+            }
+
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // Abort the function and skip removing ammo
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Caught a player ship trying to remove ammo from a mag, skipping!");
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+
+    // Only copy of increaseAmmunitionCount, to prevent returning rounds from inflating the mag storage
+    [HarmonyPatch(typeof(WeaponMagazineSystem), "increaseAmmunitionCount", typeof(string))]
+    public static class BottomlessMagsIncrement
+    {
+        [UsedImplicitly]
+        private static bool Prefix(ref WeaponMagazineSystem __instance)
+        {
+            switch (CrunchatizerCore.BottomlessMags.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    return true;
+            }
+
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // Abort the function and skip inserting ammo
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Caught a player ship trying to add ammo, skipping!");
+                    return false;
+                default:
+                    return true;
+            }
+        }
+    }
+
+    // Container auto-refresh code. Finally works to my satisfaction.
+    [HarmonyPatch(typeof(WeaponContainer), "launch")]
+    public static class ContainerAutoRefresh
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref WeaponContainer __instance)
+        {
+            switch (CrunchatizerCore.ContainerAutoRefresh.Value)
+            {
+                // If the setting's off, don't do anything!
+                case false:
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Not doing anything, setting is off for container replen");
+                    return;
+            }
+
+            if (__instance._weaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+
+            var weaponsToInit = new List<WeaponSystem>();
+            foreach (var ammoPair in __instance._weaponSystem._baseObject.AmmunitionAmountDictionary.Where(
+                         ammoPair =>
+                             ammoPair.Value == 0))
+            {
+                if (CrunchatizerCore.LogSpam.Value)
+                    MelonLogger.Msg(ammoPair.Key + " has ammunition number " + ammoPair.Value);
+
+                foreach (var weaponTarget in __instance._weaponSystem._baseObject.GetWeaponSystemsForAmmunition(
+                             ammoPair.Key))
+                {
+                    weaponsToInit.Add(weaponTarget);
+                    if (CrunchatizerCore.LogSpam.Value)
+                        MelonLogger.Msg("Adding " + weaponTarget._name + " to the list");
+                }
+            }
+
+            foreach (var current in weaponsToInit)
+            {
+                current.init();
+                if (CrunchatizerCore.LogSpam.Value) MelonLogger.Msg("Initialized " + current._name);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Ammunition), MethodType.Constructor, typeof(string), typeof(int), typeof(WeaponSystem))]
+    public static class ModifyAmmunitionAtLoadConstructor
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref Ammunition __instance, ref WeaponSystem associatedWeaponSystem)
+        {
+            if (associatedWeaponSystem == null ||
+                associatedWeaponSystem._baseObject._taskforce.Side != Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("Ammunition " + __instance._ap._displayedName +
+                                " does not have a base weapon system");
+                return;
+            }
+
+            switch (__instance._ap._type)
+            {
+                case Ammunition.Type.Missile:
+                case Ammunition.Type.Torpedo:
+                case Ammunition.Type.MLRS:
+                case Ammunition.Type.RBU:
+                    break;
+                case Ammunition.Type.ASROC:
+                case Ammunition.Type.Projectile:
+                case Ammunition.Type.Unknown:
+                case Ammunition.Type.Noisemaker:
+                case Ammunition.Type.Chaff:
+                case Ammunition.Type.Bomb:
+                case Ammunition.Type.AerialRocket:
+                case Ammunition.Type.None:
+                case Ammunition.Type.Sonobuoy:
+                case Ammunition.Type.Cluster:
+                case Ammunition.Type.MOSS:
+                case Ammunition.Type.Paratrooper:
+                case Ammunition.Type.Fueltank:
+                default:
+                    return;
+            }
+
+            MelonLogger.Msg("modifying ammo type: " + __instance._ap._ammunitionFileName);
+            if (CrunchatizerCore.ForceTerrainFollowing.Value)
+            {
+                if (CrunchatizerCore.LogSpam.Value)
+                    MelonLogger.Msg("Forcing terrain following for weapon " + __instance._ap._displayedName);
+                __instance._ap._terrainFollowFlight = true;
+            }
+
+            if (CrunchatizerCore.EnhanceMissileFeatures.Value)
+            {
+                if (CrunchatizerCore.LogSpam.Value)
+                    MelonLogger.Msg("Enhancing missile features for weapon " + __instance._ap._displayedName);
+
+                switch (__instance._ap._type)
+                {
+                    case Ammunition.Type.Missile:
+                        __instance._ap._requiresWarmUp = false;
+                        if (__instance._ap._targetType != Ammunition.Target.ASW &&
+                            __instance._ap._hasSecondaryTargetType == false)
+                        {
+                            __instance._ap._hasSecondaryTargetType = true;
+                            switch (__instance._ap._targetType)
+                            {
+                                case Ammunition.Target.ASuW:
+                                    __instance._ap._secondaryTargetType = Ammunition.Target.AAW;
+                                    break;
+                                case Ammunition.Target.AAW:
+                                    __instance._ap._secondaryTargetType = Ammunition.Target.ASuW;
+                                    break;
+                                case Ammunition.Target.UNKNOWN:
+                                case Ammunition.Target.ASW:
+                                default:
+                                    break;
+                            }
+                        }
+                        __instance._ap._killProbability = 2;
+                        __instance._ap._targetMemory = true;
+                        __instance._ap._hasLandAttackGuidance = true;
+                        __instance._ap._hasVesselAttackGuidance = true;
+                        __instance._ap._inertialGuidance = true;
+                        __instance._ap._hasESM = true;
+                        __instance._ap._isRearAspectOnly = false;
+                        __instance._ap._maxDepthUnity *= 100;
+                        __instance._ap._minDepthUnity = 0;
+                        __instance._ap._launchAltitudesInUnity.x = 0;
+                        __instance._ap._launchAltitudesInUnity.y *= 10;
+                        __instance._ap._landAttack.Clear();
+                        __instance._ap._landAttack.Add(Ammunition.LandAttack.Installation);
+                        __instance._ap._landAttack.Add(Ammunition.LandAttack.Mobile);
+                        if (__instance._ap._landAttackGuidanceType == AmmunitionParameters.GuidanceType.None)
+                            __instance._ap._landAttackGuidanceType = __instance._ap._guidanceType;
+                        __instance._ap._passiveRadarHomingFrequencies.Clear();
+                        __instance._ap._seekerGimbalFOV = 180f;
+                        // Inline reflection code to get all Globals.Frequency values
+                        foreach (var frequency in (Globals.Frequency[])Enum.GetValues(typeof(Globals.Frequency)))
+                            if (frequency != Globals.Frequency.Undefined)
+                                __instance._ap._passiveRadarHomingFrequencies.Add(frequency);
+                        __instance._ap._seekerPassiveRange = __instance._ap._maxLaunchRangeInMiles * 27.559496f *
+                                                             CrunchatizerCore.WeaponRangeMult.Value;
+                        __instance._ap._secondaryPassiveRadarGuidanceType =
+                            AmmunitionParameters.SecondaryPassiveRadarGuidanceType.Full;
+                        break;
+                    case Ammunition.Type.Torpedo:
+                        __instance._ap._targetMemory = true;
+                        __instance._ap._inertialGuidance = true;
+                        __instance._ap._maxDepthUnity *= 100;
+                        __instance._ap._minDepthUnity = 0;
+                        __instance._ap._launchAltitudesInUnity.x = 0;
+                        __instance._ap._launchAltitudesInUnity.y *= 10;
+                        break;
+                    case Ammunition.Type.ASROC:
+                    case Ammunition.Type.Cluster:
+                    case Ammunition.Type.MOSS:
+                    case Ammunition.Type.Bomb:
+                    case Ammunition.Type.AerialRocket:
+                        __instance._ap._maxDepthUnity *= 100;
+                        __instance._ap._minDepthUnity = 0;
+                        __instance._ap._launchAltitudesInUnity.x = 0;
+                        __instance._ap._launchAltitudesInUnity.y *= 10;
+                        break;
+                    case Ammunition.Type.RBU:
+                    case Ammunition.Type.MLRS:
+                    case Ammunition.Type.Projectile:
+                    case Ammunition.Type.Unknown:
+                    case Ammunition.Type.Noisemaker:
+                    case Ammunition.Type.Chaff:
+                    case Ammunition.Type.None:
+                    case Ammunition.Type.Sonobuoy:
+                    case Ammunition.Type.Paratrooper:
+                    case Ammunition.Type.Fueltank:
+                    default:
+                        break;
+                }
+            }
+
+            __instance._ap._lifeTime *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._maxLaunchRangeInMiles *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._launchRangesInUnity.y *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._horizonRangesInUnity.y *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+            __instance._ap._seekerPassiveRange *= (float)Math.Sqrt(CrunchatizerCore.WeaponRangeMult.Value);
+        }
+    }
+
+    // The Really Real Weapon Modification Code.
+    [HarmonyPatch(typeof(WeaponSystem), "LoadFromInI")]
+    public static class MunchWeaponProperties
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref WeaponSystem __instance)
+        {
+            switch (__instance._baseObject._taskforce.Side)
+            {
+                case Taskforce.TfType.Player:
+                    // LEAVE THESE AT ONE if you don't want to do anything with them!
+                    //MelonLogger.Msg("We are now operating on:");
+                    //CrunchatizerCore.PrintObjectFields(__instance._vwp);
+                    if (__instance._baseObject._type == ObjectBase.ObjectType.Aircraft) return;
+                    if (CrunchatizerCore.LogSpam.Value)
+                    {
+                        MelonLogger.Msg(
+                            "Multiplying fire rate/dividing launch delay+burst time+salvo time+burst time by " +
+                            CrunchatizerCore.FireRateMult.Value);
+                        MelonLogger.Msg("Dividing reaction time of " + __instance._vwp._maxReactiontime + " by " +
+                                        CrunchatizerCore.ReactionTimeDiv.Value);
+                        MelonLogger.Msg("Dividing target acquisition time of " +
+                                        __instance._vwp._targetAcquisitionTime + " by " +
+                                        CrunchatizerCore.TargetAcqTimeDiv.Value);
+                        MelonLogger.Msg("Dividing pre-launch delay of " + __instance._vwp._preLaunchDelay + " by " +
+                                        CrunchatizerCore.PreLaunchDelayDiv.Value);
+                        MelonLogger.Msg("Dividing mag reload time of " + __instance._vwp._magazineReloadTime +
+                                        " by " +
+                                        CrunchatizerCore.MagReloadTimeDiv.Value);
+                        MelonLogger.Msg("Multiplying vertical traverse rate of " +
+                                        __instance._vwp._verticalDegreesPerSecond + " by " +
+                                        CrunchatizerCore.TraverseSpeedMult.Value);
+                        MelonLogger.Msg("Multiplying horizontal traverse rate of " +
+                                        __instance._vwp._horizontalDegreesPerSecond + " by " +
+                                        CrunchatizerCore.TraverseSpeedMult.Value);
+                    }
+
+                    // We just do some math, that's all
+                    __instance._vwp._fireRatePerMinute *= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._delayBetweenLaunches /= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._burstTime /= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._salvoFireTime /= CrunchatizerCore.FireRateMult.Value;
+                    __instance._vwp._maxReactiontime /= CrunchatizerCore.ReactionTimeDiv.Value;
+                    __instance._vwp._targetAcquisitionTime /= CrunchatizerCore.TargetAcqTimeDiv.Value;
+                    __instance._vwp._preLaunchDelay /= CrunchatizerCore.PreLaunchDelayDiv.Value;
+                    __instance._vwp._magazineReloadTime /= CrunchatizerCore.MagReloadTimeDiv.Value;
+                    __instance._vwp._verticalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
+                    __instance._vwp._horizontalDegreesPerSecond *= CrunchatizerCore.TraverseSpeedMult.Value;
+                    break;
+            }
+        }
+    }
+
+    // We need special code to alter properties inherent solely to WeaponSystemGun, might also need to add this for WeaponSystemChaff/RBU/etc in the future
+    [HarmonyPatch(typeof(WeaponSystemGun), "LoadFromInI", typeof(IniHandler), typeof(string),
+        typeof(ObjectBaseParameters), typeof(string))]
+    public static class AlterGunFireRate
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref WeaponSystemGun __instance, ref float ____burstDelay,
+            ref float ____delayBetweenShotsinBurst, ref float ____shellReloadTime)
+        {
+            if (__instance._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (CrunchatizerCore.LogSpam.Value)
+                MelonLogger.Msg("For gun " + __instance._name + ", burst delay is " + ____burstDelay +
+                                ", shell reload time is " + ____shellReloadTime +
+                                ", delay between shots in burst is " +
+                                ____delayBetweenShotsinBurst);
+            ____burstDelay /= CrunchatizerCore.FireRateMult.Value;
+            ____shellReloadTime /= CrunchatizerCore.FireRateMult.Value;
+            ____delayBetweenShotsinBurst /= CrunchatizerCore.FireRateMult.Value;
+        }
+    }
+
+    // RBU animations are extremely long and so are patched here
+    [HarmonyPatch(typeof(WeaponSystemLauncher), "init")]
+    public static class FixRBUReloadAnimations
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref WeaponSystemLauncher __instance)
+        {
+            if (__instance._weaponType == WeaponSystem.WeaponType.RBU &&
+                __instance._baseObject._taskforce.Side == Taskforce.TfType.Player)
+            {
+                MelonLogger.Msg("Nuking load anims for " + __instance._name);
+                __instance._loadAmmunitionAnimation = null;
+                __instance._unloadAmmunitionAnimation = null;
+                __instance._forceMoveToLoadPosition = false;
+                __instance._openSystemAnimation = null;
+                __instance._closeSystemAnimation = null;
+            }
+        }
+    }
+
+
+    // To change shared launch delays.
+    // NOTE: There seems to be a hard cap on one engage task per second for weapons free mode. Missile launching speed is limited as such.
+    [HarmonyPatch(typeof(ObjectBaseLoader), "LoadWeaponSystems", typeof(IniHandler), typeof(ObjectBaseParameters),
+        typeof(ObjectBase))]
+    public static class AlterWeaponSystemsAtObjectLoad
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref ObjectBaseParameters obp)
+        {
+            if (obp._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (obp._baseObject._type is ObjectBase.ObjectType.Aircraft ||
+                obp._baseObject._type is ObjectBase.ObjectType.Helicopter)
+                return;
+            if (CrunchatizerCore.LogSpam.Value)
+                MelonLogger.Msg("Ship " + obp._baseObject.name +
+                                " has shared launch intervals AND is player, we proceed to modify them!");
+            foreach (var pair in obp._baseObject._sharedLaunchIntervals.ToList())
+            {
+                if (CrunchatizerCore.LogSpam.Value)
+                    MelonLogger.Msg("The interval for system " + pair.Key + " is currently " + pair.Value);
+                // obp._baseObject._sharedLaunchIntervals[pair.Key] /= CrunchatizerCore.FireRateMult.Value;
+                obp._baseObject._sharedLaunchIntervals[pair.Key] = 0; // Screw it
+                if (CrunchatizerCore.LogSpam.Value)
+                    MelonLogger.Msg("The modified interval for system " + pair.Key + " is now " +
+                                    obp._baseObject._sharedLaunchIntervals[pair.Key]);
+            }
+        }
+    }
+
+    // I couldn't figure out any better way to stop the barrel from RECEDING INTO THE SHIP so instead you all get this.
+    // Better way would be to intercept the readIni functions to do arbitrary modifications but that seems EXTREMELY difficult
+    [HarmonyPatch(typeof(GunBarrel), MethodType.Constructor, typeof(GameObject), typeof(WeaponParameters),
+        typeof(WeaponSystemGun), typeof(GameObject), typeof(Vector3), typeof(Vector3), typeof(float),
+        typeof(float))]
+    public static class InterceptRecoilData
+    {
+        [UsedImplicitly]
+        private static void Prefix(ref float recoilTime, ref WeaponSystemGun vwsg)
+        {
+            if (vwsg._baseObject._type == ObjectBase.ObjectType.Aircraft) return;
+            if (vwsg._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (CrunchatizerCore.LogSpam.Value)
+                MelonLogger.Msg("Our recoil time for system " + vwsg._name + " is " + recoilTime);
+            recoilTime /= CrunchatizerCore.FireRateMult.Value;
+            if (CrunchatizerCore.LogSpam.Value) MelonLogger.Msg("Now it is " + recoilTime);
+        }
+    }
+
+
+    // Now for aircraft and helicopters. They have different inits, so need different modifiers.
+    // Would be easier to peg range flown at zero/fuel quantity at max, but I'm too dumb for that
+    [HarmonyPatch(typeof(Aircraft), "init")]
+    public static class HijackAircraftInit
+    {
+        [UsedImplicitly]
+        private static void Postfix(ref AircraftParameters aircraftParameters, ref Aircraft __instance)
+        {
+            if (aircraftParameters._baseObject._taskforce.Side != Taskforce.TfType.Player) return;
+            if (CrunchatizerCore.LogSpam.Value)
+            {
+                MelonLogger.Msg("Our base fixed-wing range is " +
+                                aircraftParameters._baseObject._obp._maxRangeInKm +
+                                " kilometers");
+                MelonLogger.Msg("Our base default fixed-wing range is " +
+                                aircraftParameters._baseObject._obp._defaultMaxRangeInKm + " kilometers");
+            }
+
+            aircraftParameters._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            aircraftParameters._defaultMaxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.RangeInKm.Value *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.ActualRangeInKm.Value *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance.RangeOnMap.Value *= CrunchatizerCore.AircraftRangeMult.Value;
+            if (CrunchatizerCore.LogSpam.Value)
+            {
+                MelonLogger.Msg("Post-mod fixed-wing range is " +
+                                aircraftParameters._baseObject._obp._maxRangeInKm +
+                                " kilometers");
+                MelonLogger.Msg("Post-mod default fixed-wing range is " +
+                                aircraftParameters._baseObject._obp._defaultMaxRangeInKm + " kilometers");
+            }
+        }
+    }
+
+    // And helicopters
+    [HarmonyPatch(typeof(Helicopter), "init")]
+    public static class HijackHelicopterInit
+    {
+        [UsedImplicitly]
+        private static void Prefix(ref Helicopter __instance)
+        {
+            if (__instance._taskforce.Side != Taskforce.TfType.Player) return;
+            if (__instance._obp == null)
+            {
+                MelonLogger.Msg("Base params not initialized!!");
+                return;
+            }
+
+            if (CrunchatizerCore.LogSpam.Value)
+            {
+                MelonLogger.Msg("Our base rotary-wing range is " + __instance._obp._maxRangeInKm + " kilometers");
+                MelonLogger.Msg("Our default base rotary-wing range is " + __instance._obp._defaultMaxRangeInKm +
+                                " kilometers");
+            }
+
+            __instance._obp._maxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            __instance._obp._defaultMaxRangeInKm *= CrunchatizerCore.AircraftRangeMult.Value;
+            if (CrunchatizerCore.LogSpam.Value)
+            {
+                MelonLogger.Msg("Post-modification base rotary range is now " + __instance._obp._maxRangeInKm +
+                                " kilometers");
+                MelonLogger.Msg("Post-modification base rotary default range is now " +
+                                __instance._obp._defaultMaxRangeInKm + " kilometers");
+            }
+        }
+    }
+}
