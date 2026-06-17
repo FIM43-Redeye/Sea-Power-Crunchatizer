@@ -23,13 +23,13 @@ namespace SeaPowerCrunchatizer.Patches
     /// </summary>
     public static class AircraftPatches
     {
-        // --- CACHED REFLECTION FIELDS ---
-        private static readonly FieldInfo _weaponsField;
-        private static readonly FieldInfo _loadedAmmunitionField;
-        private static readonly FieldInfo _loadedAmmunitionCountField;
-        private static readonly FieldInfo _baseObjectField;
-        private static readonly FieldInfo _systemNameField;
-        private static readonly MethodInfo _createAmmunitionObjectInstanceMethod;
+        // --- CACHED REFLECTION (private game members only) ---
+        // Most hardpoint/weapon members we touch (_weapons, _loadedAmmunitionCount,
+        // _baseObject, _systemName) are public in the game and accessed directly below.
+        // Only these two are private, so we reach them via reflection - resolved once
+        // here and loudly logged by Reflect if a game update ever renames them.
+        private static readonly FieldInfo? _loadedAmmunitionField;
+        private static readonly MethodInfo? _createAmmunitionObjectInstanceMethod;
 
         /// <summary>
         /// Thread-local flag indicating a rearm operation is in progress.
@@ -52,16 +52,11 @@ namespace SeaPowerCrunchatizer.Patches
         {
             CrunchatizerCore.Log.LogInfo("[AutoRearm] Caching reflection data...");
 
-            _weaponsField = AccessTools.Field(typeof(WeaponSystemHardpoint), "_weapons");
-            // _loadedAmmunition is Dictionary<Ammunition, int> - contains actual Ammunition objects with type data
-            _loadedAmmunitionField = AccessTools.Field(typeof(WeaponSystemHardpoint), "_loadedAmmunition");
-            // _loadedAmmunitionCount is Dictionary<string, int> - contains only ammunition filenames
-            _loadedAmmunitionCountField = AccessTools.Field(typeof(WeaponSystem), "_loadedAmmunitionCount");
-            _baseObjectField = AccessTools.Field(typeof(WeaponSystem), "_baseObject");
-            _systemNameField = AccessTools.Field(typeof(WeaponSystem), "_systemName");
-
+            // _loadedAmmunition is a private Dictionary<Ammunition, int> holding the actual
+            // Ammunition objects with type data (the public _loadedAmmunitionCount only has filenames).
+            _loadedAmmunitionField = Reflect.Field(typeof(WeaponSystemHardpoint), "_loadedAmmunition");
             _createAmmunitionObjectInstanceMethod =
-                AccessTools.Method(typeof(WeaponSystemHardpoint), "createAmmunitionObjectInstance");
+                Reflect.Method(typeof(WeaponSystemHardpoint), "createAmmunitionObjectInstance");
 
             CrunchatizerCore.Log.LogInfo("[AutoRearm] Caching complete.");
         }
@@ -90,11 +85,11 @@ namespace SeaPowerCrunchatizer.Patches
                     return;
                 }
 
-                var weaponsList = (List<WeaponBase>?)_weaponsField.GetValue(hardpoint);
-                var loadedAmmunition = (Dictionary<Ammunition, int>?)_loadedAmmunitionField.GetValue(hardpoint);
-                var loadedAmmunitionCount = (Dictionary<string, int>?)_loadedAmmunitionCountField.GetValue(hardpoint);
-                var baseObject = (ObjectBase?)_baseObjectField.GetValue(hardpoint);
-                systemName = (string?)_systemNameField.GetValue(hardpoint);
+                var weaponsList = hardpoint._weapons;
+                var loadedAmmunition = (Dictionary<Ammunition, int>?)_loadedAmmunitionField?.GetValue(hardpoint);
+                var loadedAmmunitionCount = hardpoint._loadedAmmunitionCount;
+                var baseObject = hardpoint._baseObject;
+                systemName = hardpoint._systemName;
 
                 if (baseObject)
                 {
@@ -178,7 +173,7 @@ namespace SeaPowerCrunchatizer.Patches
                     PlayerUtils.LogIfSpam(
                         $"[Rearm] Creating ammo '{loadoutInfo.AmmoFileName}'. Adjusted LocalPos:{loadoutInfo.LocalSpawnPosition}. Passing position {adjustedSpawnPosition}.");
 
-                    _createAmmunitionObjectInstanceMethod.Invoke(hardpoint, new object[]
+                    _createAmmunitionObjectInstanceMethod?.Invoke(hardpoint, new object[]
                     {
                         loadoutInfo.AmmoFileName ?? string.Empty,
                         adjustedSpawnPosition,
