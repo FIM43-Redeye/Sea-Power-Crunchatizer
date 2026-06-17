@@ -147,6 +147,11 @@ namespace SeaPowerCrunchatizer.Patches
             IgnoredCallers.Add("SeaPower.SensorSystemLaserDesignator.rangeTargetWithLaser_bkp");
             IgnoredCallers.Add("SeaPower.TVSeeker.isInRange");
             IgnoredCallers.Add("SeapowerUI.MapUnitViewModel.CommunicationResult");
+            // These GetRange overrides query the VISUAL horizon (getRadarHorizon with visual: true).
+            // The Ignore Radar Horizon cheat intentionally leaves visual detection alone, matching the
+            // other visual/laser exclusions above. Only SensorSystemRadar.GetRange is patched.
+            IgnoredCallers.Add("SeaPower.SensorSystemVisual.GetRange");
+            IgnoredCallers.Add("SeaPower.SensorSystemLaserDesignator.GetRange");
         }
 
         /// <summary>
@@ -190,7 +195,11 @@ namespace SeaPowerCrunchatizer.Patches
             const string cacheFileName = "Crunchatizer.RadarHorizon.cache";
             string cacheFilePath = Path.Combine(Paths.CachePath, cacheFileName);
             var gameAssembly = typeof(RadarCalculator).Assembly;
-            string cacheKey = gameAssembly.FullName;
+            // The leading token is a cache-format version: bump it whenever the way we
+            // key/store callers changes, so stale caches from older mod versions are
+            // discarded instead of silently masking the change. (v2: caller keys now
+            // include the declaring type, so virtual overrides no longer collide.)
+            string cacheKey = $"v2|{gameAssembly.FullName}";
 
             var callers = new Dictionary<string, MethodBase>();
 
@@ -207,7 +216,9 @@ namespace SeaPowerCrunchatizer.Patches
                         var method = AccessTools.Method(lines[i]);
                         if (method != null)
                         {
-                            callers[method.ToString()] = method;
+                            // Key by the declaring-type-qualified signature so virtual
+                            // overrides (e.g. each SensorSystem*.GetRange) stay distinct.
+                            callers[GetParsableMethodSignature(method)] = method;
                         }
                         else
                         {
@@ -261,7 +272,10 @@ namespace SeaPowerCrunchatizer.Patches
                                 {
                                     if (instruction.Calls(OriginalHorizonMethod))
                                     {
-                                        var signature = method.ToString();
+                                        // Declaring-type-qualified so virtual overrides that share
+                                        // a signature (the SensorSystem*.GetRange family) don't
+                                        // collapse into a single entry and get dropped.
+                                        var signature = GetParsableMethodSignature(method);
                                         if (!callers.ContainsKey(signature))
                                         {
                                             callers.Add(signature, method);
