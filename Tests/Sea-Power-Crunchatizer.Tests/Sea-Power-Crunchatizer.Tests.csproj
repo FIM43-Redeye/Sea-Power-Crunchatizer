@@ -17,12 +17,15 @@
     </ItemGroup>
 
     <!--
-    Note: We don't reference the main project directly because it has complex
-    Unity/BepInEx dependencies. Instead, we test the core logic by copying
-    the pure function implementation. This keeps tests fast and independent.
+    The main project has complex Unity/BepInEx dependencies, so we don't reference
+    it directly. Instead we LINK the individual pure (dependency-free) source files
+    we want to test. This compiles the real production source into the test assembly
+    - no copy/paste drift - while keeping the test run fast and Unity-free.
 
-    In a production setting, you would extract the core logic into a separate
-    netstandard library that both the main mod and tests can reference.
+    Only link files that have no Unity/BepInEx using directives.
     -->
+    <ItemGroup>
+        <Compile Include="..\..\Utilities\CountExtensions.cs" Link="Linked\CountExtensions.cs" />
+    </ItemGroup>
 
 </Project>
