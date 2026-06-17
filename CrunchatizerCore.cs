@@ -34,7 +34,7 @@ namespace Sea_Power_Crunchatizer
             public const string PLUGIN_NAME = "Sea Power Crunchatizer";
 
             /// <summary>Current version of the plugin.</summary>
-            public const string PLUGIN_VERSION = "2.2.2";
+            public const string PLUGIN_VERSION = "2.2.3";
         }
 
         /// <summary>

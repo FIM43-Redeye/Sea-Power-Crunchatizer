@@ -902,4 +902,48 @@ namespace SeaPowerCrunchatizer.Patches
             }
         }
     }
+
+    /// <summary>
+    /// Reports the true extended kinematic range of infinite-burn player missiles to the launch
+    /// range gate, so range-to-engage reflects the endless burn.
+    /// </summary>
+    /// <remarks>
+    /// The launch gate (WeaponSystemLauncher) uses MaxRangeRough for targeted full-kinematics
+    /// missiles, which defers to KinematicsCache.CalcMaxRange. That cache is keyed by weapon NAME
+    /// (the ammo filename) + target geometry, not the live AmmunitionParameters - so a same-named
+    /// enemy missile (with an unmodified _ap) can populate the entry first and pin a stale,
+    /// pre-cheat range that our per-instance _maxFlightTime extension never reaches. This postfix
+    /// recomputes the range fresh for player full-kinematics missiles - mirroring CalcMaxRange's
+    /// own SimulateShotLinear call but skipping the cache - so the extended flight time is honored.
+    /// </remarks>
+    [HarmonyPatch(typeof(AmmunitionParameters), nameof(AmmunitionParameters.MaxRangeRough),
+        new[] { typeof(ObjectBase), typeof(Vector3), typeof(Vector3) })]
+    internal static class ExtendedKinematicRangePatch
+    {
+        [HarmonyPostfix]
+        [UsedImplicitly]
+        private static void Postfix(AmmunitionParameters __instance, ObjectBase launcher,
+            Vector3 targetPos, Vector3 targetVelocity, ref float __result)
+        {
+            if (CheatConfig.InfiniteMissileBurnTime.Value == InfiniteBurnMode.Off ||
+                __instance._type != Ammunition.Type.Missile ||
+                __instance.Kinematics != AmmunitionParameters.KinematicsLevel.Full ||
+                !PlayerUtils.IsPlayerUnit(launcher))
+            {
+                return;
+            }
+
+            // Mirror KinematicsCache.CalcMaxRange's fresh simulation (same args), but bypass the
+            // name-keyed cache so the missile's extended _maxFlightTime drives the result.
+            float launchVelocity = launcher.IsAirUnit ? launcher._velocityInKnots : 0f;
+            var fresh = Missile.SimulateShotLinear(
+                __instance, launcher.transform.position, launchVelocity, targetVelocity, targetPos,
+                launcher.IsAirUnit, -1f, 1f, __instance._maxFlightTime * 0.9f);
+
+            if (!float.IsNaN(fresh.MaxRange) && fresh.MaxRange > __result)
+            {
+                __result = fresh.MaxRange;
+            }
+        }
+    }
 }
