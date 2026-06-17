@@ -355,7 +355,7 @@ namespace SeaPowerCrunchatizer.Patches
                 return;
             }
 
-            var field = AccessTools.Field(obj.GetType(), fieldName);
+            var field = Reflect.Field(obj.GetType(), fieldName);
             if (field != null && field.FieldType == typeof(float))
             {
                 var value = (float)field.GetValue(obj);
@@ -373,7 +373,7 @@ namespace SeaPowerCrunchatizer.Patches
         {
             if (divisor == 0f)
             {
-                var field = AccessTools.Field(obj.GetType(), fieldName);
+                var field = Reflect.Field(obj.GetType(), fieldName);
                 if (field != null && field.FieldType == typeof(float))
                 {
                     field.SetValue(obj, 0f);
@@ -382,7 +382,7 @@ namespace SeaPowerCrunchatizer.Patches
             }
             else if (divisor > 0f && !Mathf.Approximately(divisor, 1.0f))
             {
-                var field = AccessTools.Field(obj.GetType(), fieldName);
+                var field = Reflect.Field(obj.GetType(), fieldName);
                 if (field != null && field.FieldType == typeof(float))
                 {
                     var value = (float)field.GetValue(obj);
@@ -565,8 +565,8 @@ namespace SeaPowerCrunchatizer.Patches
             PlayerUtils.LogIfSpam(
                 $"CIWSMod: Doubling intercept chance for '{__instance._name}' on '{__instance._baseObject.name}'.");
 
-            var missileField = AccessTools.Field(typeof(WeaponSystemCIWS), "_missileInterceptChance");
-            var aircraftField = AccessTools.Field(typeof(WeaponSystemCIWS), "_aircraftInterceptChance");
+            var missileField = Reflect.Field(typeof(WeaponSystemCIWS), "_missileInterceptChance");
+            var aircraftField = Reflect.Field(typeof(WeaponSystemCIWS), "_aircraftInterceptChance");
 
             missileField?.SetValue(__instance, (float)missileField.GetValue(__instance) * 2f);
             aircraftField?.SetValue(__instance, (float)aircraftField.GetValue(__instance) * 2f);

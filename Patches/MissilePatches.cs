@@ -23,7 +23,7 @@ namespace SeaPowerCrunchatizer.Patches
         /// </summary>
         [HarmonyTargetMethod]
         [UsedImplicitly]
-        private static MethodBase TargetMethod()
+        private static MethodBase? TargetMethod()
         {
             // TerminalApproach is an internal nested class inside Missile
             var terminalApproachType = typeof(Missile).GetNestedType("TerminalApproach", BindingFlags.NonPublic);
@@ -31,7 +31,7 @@ namespace SeaPowerCrunchatizer.Patches
             {
                 throw new InvalidOperationException("Could not find Missile.TerminalApproach type");
             }
-            return AccessTools.Constructor(terminalApproachType, new[] { typeof(Missile) });
+            return Reflect.Constructor(terminalApproachType, new[] { typeof(Missile) });
         }
 
         /// <summary>
