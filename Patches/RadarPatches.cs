@@ -127,6 +127,9 @@ namespace SeaPowerCrunchatizer.Patches
             PatchingStrategies.Add("SeaPower.RadarCalculator.getSignalStrength", loadDetectorFromArg1);
             PatchingStrategies.Add("SeaPower.UnitSensorCache.UnitsHaveRadarlLOS", loadDetectorFromArg1);
             PatchingStrategies.Add("SeaPower.SensorSystemECM.OnFixedUpdate", loadDetectorFromThisBaseObject);
+            // GetRange clamps a radar's detection distance to the horizon (Mathf.Min(..., radarHorizon, ...));
+            // the detector is the sensor's owning unit (_baseObject), same as the other sensor-side callers.
+            PatchingStrategies.Add("SeaPower.SensorSystemRadar.GetRange", loadDetectorFromThisBaseObject);
             PatchingStrategies.Add("SeaPower.Radar.IsDetectableTarget_Conditional", loadDetectorFromThisHomeObject);
             PatchingStrategies.Add("SeaPower.WeaponSystemHardpoint.OnUpdate", loadDetectorFromThisBaseObject);
             PatchingStrategies.Add("SeaPower.WeaponSystemLauncher.CalculateHorizon", loadDetectorFromThisBaseObject);
