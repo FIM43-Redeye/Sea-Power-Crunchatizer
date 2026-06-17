@@ -26,6 +26,7 @@
     -->
     <ItemGroup>
         <Compile Include="..\..\Utilities\CountExtensions.cs" Link="Linked\CountExtensions.cs" />
+        <Compile Include="..\..\Utilities\BurnTimeMath.cs" Link="Linked\BurnTimeMath.cs" />
     </ItemGroup>
 
 </Project>

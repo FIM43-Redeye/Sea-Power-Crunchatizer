@@ -75,6 +75,30 @@ namespace SeaPowerCrunchatizer.Patches
             }
 
             ApplyRangeMultiplier(__instance, CheatConfig.WeaponRangeMult.Value);
+
+            if (CheatConfig.InfiniteMissileBurnTime.Value && __instance._ap._type == Ammunition.Type.Missile)
+            {
+                ApplyInfiniteBurnTime(__instance);
+            }
+        }
+
+        /// <summary>
+        /// Makes a missile's motor burn for effectively the whole flight, so it powers to
+        /// maximum range instead of coasting down and stall-destructing once the motor cuts out.
+        /// Burn parameters are only read on the full-kinematics flight path, so this is a
+        /// harmless no-op for legacy/cruise (KinematicsLevel.None) missiles, which ignore thrust.
+        /// </summary>
+        private static void ApplyInfiniteBurnTime(Ammunition ammo)
+        {
+            var ap = ammo._ap;
+            var (accelerationTime, sustainerBurnTime) = BurnTimeMath.ApplyInfiniteBurn(
+                ap._accelerationTime, ap._sustainerBurnTime, ap._sustainerBurnAcceleration);
+
+            ap._accelerationTime = accelerationTime;
+            ap._sustainerBurnTime = sustainerBurnTime;
+
+            PlayerUtils.LogIfSpam(
+                $"AmmoMod: Infinite burn time for missile '{ap._displayedName}' (boost {accelerationTime}s, sustainer {sustainerBurnTime}s).");
         }
 
         private static void ApplyTerrainFollowing(Ammunition ammo)

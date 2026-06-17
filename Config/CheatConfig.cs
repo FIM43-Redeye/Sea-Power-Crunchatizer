@@ -153,6 +153,13 @@ namespace SeaPowerCrunchatizer.Config
         public static ConfigEntry<bool> UnbreakableWireGuidance = null!;
 
         /// <summary>
+        /// Player missile motors burn for the whole flight instead of cutting out, so the
+        /// missile powers to maximum range instead of coasting down and stall-destructing.
+        /// Only affects full-kinematics missiles (the only ones that model motor burn).
+        /// </summary>
+        public static ConfigEntry<bool> InfiniteMissileBurnTime = null!;
+
+        /// <summary>
         /// Multiplier for fire rate (higher = faster). Affects RoF, various delays.
         /// Value of 0 sets rate to effective infinity.
         /// </summary>
@@ -295,6 +302,9 @@ namespace SeaPowerCrunchatizer.Config
 
             UnbreakableWireGuidance = config.Bind(WeaponSection, "Unbreakable Wire Guidance", true,
                 "Prevents wire-guided weapons from breaking their connection due to the launching vessel's speed.");
+
+            InfiniteMissileBurnTime = config.Bind(WeaponSection, "Infinite Missile Burn Time", true,
+                "Player missile motors burn for the entire flight instead of cutting out, so missiles power to maximum range rather than coasting down and self-destructing. Only affects full-kinematics missiles.");
 
             FireRateMult = config.Bind(WeaponSection, "Fire Rate Multiplier", 1,
                 "Multiplier for fire rate (higher = faster). Affects RoF, various delays. 0 = instant, other values multiply.");
