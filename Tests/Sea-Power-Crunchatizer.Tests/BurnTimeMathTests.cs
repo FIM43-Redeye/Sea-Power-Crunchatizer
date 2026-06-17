@@ -58,5 +58,32 @@ namespace SeaPowerCrunchatizer.Tests
             // the burn constant only needs to comfortably exceed that.
             Assert.IsTrue(BurnTimeMath.InfiniteBurnSeconds > 600f);
         }
+
+        [TestMethod]
+        public void ExtendFlightTime_PositiveValue_MultipliesProportionally()
+        {
+            // A 120s-flight missile should gain proportional reach, not a flat cap.
+            Assert.AreEqual(120f * BurnTimeMath.FlightTimeMultiplier, BurnTimeMath.ExtendFlightTime(120f));
+        }
+
+        [TestMethod]
+        public void ExtendFlightTime_ShortFlight_StaysShort()
+        {
+            // A 30s SAM stays modest (30 * 3 = 90s), so its range sim isn't over-iterated.
+            Assert.AreEqual(90f, BurnTimeMath.ExtendFlightTime(30f));
+        }
+
+        [TestMethod]
+        public void ExtendFlightTime_Zero_IsLeftUnset()
+        {
+            // Non-positive means "unset" -> leave it so the game uses its own default.
+            Assert.AreEqual(0f, BurnTimeMath.ExtendFlightTime(0f));
+        }
+
+        [TestMethod]
+        public void ExtendFlightTime_Negative_IsLeftUnset()
+        {
+            Assert.AreEqual(-1f, BurnTimeMath.ExtendFlightTime(-1f));
+        }
     }
 }

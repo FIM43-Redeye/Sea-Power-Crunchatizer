@@ -49,5 +49,24 @@ namespace SeaPowerCrunchatizer.Utilities
 
             return (InfiniteBurnSeconds, sustainerBurnTime);
         }
+
+        /// <summary>
+        /// How much the missile's flight-time/lifetime cap (_maxFlightTime) is extended when
+        /// infinite burn is applied. The kinematic range simulation is bounded by _maxFlightTime,
+        /// so a sustained motor only translates into longer range if the missile also lives longer.
+        /// A multiplier (rather than a flat value) keeps the extension proportional: short-range
+        /// weapons aren't over-simulated, long-range ones gain proportionally more reach.
+        /// </summary>
+        public const float FlightTimeMultiplier = 3f;
+
+        /// <summary>
+        /// Returns the extended flight-time cap for an infinite-burn missile. A non-positive input
+        /// means "unset" (the game falls back to its own default), so it is left untouched rather
+        /// than turned into a hard zero.
+        /// </summary>
+        public static float ExtendFlightTime(float maxFlightTime)
+        {
+            return maxFlightTime > 0f ? maxFlightTime * FlightTimeMultiplier : maxFlightTime;
+        }
     }
 }

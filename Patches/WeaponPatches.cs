@@ -84,21 +84,33 @@ namespace SeaPowerCrunchatizer.Patches
 
         /// <summary>
         /// Makes a missile's motor burn for effectively the whole flight, so it powers to
-        /// maximum range instead of coasting down and stall-destructing once the motor cuts out.
-        /// Burn parameters are only read on the full-kinematics flight path, so this is a
-        /// harmless no-op for legacy/cruise (KinematicsLevel.None) missiles, which ignore thrust.
+        /// maximum range instead of coasting down and stall-destructing once the motor cuts out,
+        /// and extends its flight-time cap so that endless burn actually translates into longer
+        /// kinematic range (range-to-engage). Only full-kinematics missiles model motor burn and
+        /// have their range simulated; legacy/cruise (KinematicsLevel.None) missiles ignore thrust
+        /// and use a static launch range, so they are skipped.
         /// </summary>
         private static void ApplyInfiniteBurnTime(Ammunition ammo)
         {
             var ap = ammo._ap;
+            if (ap.Kinematics != AmmunitionParameters.KinematicsLevel.Full)
+            {
+                return;
+            }
+
             var (accelerationTime, sustainerBurnTime) = BurnTimeMath.ApplyInfiniteBurn(
                 ap._accelerationTime, ap._sustainerBurnTime, ap._sustainerBurnAcceleration);
 
             ap._accelerationTime = accelerationTime;
             ap._sustainerBurnTime = sustainerBurnTime;
 
+            // The kinematic range simulation only runs for the missile's lifetime, so a sustained
+            // motor only buys longer range if the missile also lives longer. Extend proportionally.
+            ap._maxFlightTime = BurnTimeMath.ExtendFlightTime(ap._maxFlightTime);
+
             PlayerUtils.LogIfSpam(
-                $"AmmoMod: Infinite burn time for missile '{ap._displayedName}' (boost {accelerationTime}s, sustainer {sustainerBurnTime}s).");
+                $"AmmoMod: Infinite burn time for missile '{ap._displayedName}' " +
+                $"(boost {accelerationTime}s, sustainer {sustainerBurnTime}s, maxFlight {ap._maxFlightTime}s).");
         }
 
         private static void ApplyTerrainFollowing(Ammunition ammo)
