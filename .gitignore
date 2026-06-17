@@ -7,3 +7,9 @@ riderModule.iml
 # Rider
 .idea/
 *.DotSettings.user
+
+# Decompiled game source - local reference only, proprietary, regenerated as the game updates
+/Decompiled/
+
+# Claude Code local settings
+.claude/settings.local.json

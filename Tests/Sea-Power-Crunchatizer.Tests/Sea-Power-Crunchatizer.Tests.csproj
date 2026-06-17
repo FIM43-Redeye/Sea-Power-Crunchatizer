@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+        <PackageReference Include="MSTest.TestAdapter" Version="3.*" />
+        <PackageReference Include="MSTest.TestFramework" Version="3.*" />
+        <PackageReference Include="coverlet.collector" Version="6.*" />
+    </ItemGroup>
+
+    <!--
+    Note: We don't reference the main project directly because it has complex
+    Unity/BepInEx dependencies. Instead, we test the core logic by copying
+    the pure function implementation. This keeps tests fast and independent.
+
+    In a production setting, you would extract the core logic into a separate
+    netstandard library that both the main mod and tests can reference.
+    -->
+
+</Project>
