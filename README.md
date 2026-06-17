@@ -1,13 +1,15 @@
 # Sea-Power-Crunchatizer
-A simple MelonLoader cheat mod. Plug-and-play, config explains everything.
+A simple BepInEx cheat mod. Plug-and-play, config explains everything.
 
 # Installation
-1) Download the MelonLoader Installer: https://github.com/LavaGang/MelonLoader/releases
-2) Run it to install MelonLoader onto Sea Power.
-3) Place the .dll file in the Mods folder in your game's root.
+1) Download BepInEx 5.x (the Mono build matching your OS, e.g. x64) from: https://github.com/BepInEx/BepInEx/releases
+2) Extract it into your Sea Power game folder, then launch the game once so BepInEx generates its folders.
+3) Place `Sea_Power_Crunchatizer.dll` in the `BepInEx/plugins` folder in your game's root.
 
 # Configuration
-In the UserData folder, edit the MelonPreferences.cfg file.
+Launch the game once with the mod installed so it writes its config, then edit
+`BepInEx/config/net.particle.sea_power_crunchatizer.cfg`. Every setting is grouped
+into sections (General, Weapons, Aircraft, Sensors, Miscellaneous) and documented inline.
 
 # Known Issues
 - The shared launch delay for ships can be altered, but engagement timing seems to still respect it, at least if the delay is one second. I'm not sure how to resolve this; if you have ideas, make an issue or a PR.
