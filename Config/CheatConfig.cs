@@ -65,6 +65,12 @@ namespace SeaPowerCrunchatizer.Config
         /// </summary>
         public static ConfigEntry<bool> ExtremeLogSpam = null!;
 
+        /// <summary>
+        /// Appends missile thrust/drag/burn diagnostics to the in-game dev menu's missile
+        /// readout. Only renders while the dev menu is open and a missile is selected.
+        /// </summary>
+        public static ConfigEntry<bool> DebugMissileReadout = null!;
+
         // =====================================================================
         // General Cheats
         // =====================================================================
@@ -255,6 +261,9 @@ namespace SeaPowerCrunchatizer.Config
 
             ExtremeLogSpam = config.Bind(MiscSection, "Enable Extreme Debug Logging", false,
                 "Enables logging for methods that run every frame and such - this WILL destroy your frames!");
+
+            DebugMissileReadout = config.Bind(MiscSection, "Debug Missile Readout", true,
+                "Appends missile thrust/drag/burn diagnostics to the in-game dev menu's missile readout (only visible while the dev menu is open with a missile selected).");
 
             // General Cheats
             UnlimitedRepair = config.Bind(GeneralSection, "Unlimited Repair", true,
