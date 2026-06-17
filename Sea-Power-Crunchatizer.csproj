@@ -64,6 +64,63 @@
 
     <ItemGroup>
         <!-- Explicit references to game/modding specific DLLs (these are correct) -->
+        <!--
+        Transitive dependencies of Seapower-Scripts.dll. The compiler does not
+        need these (our code never touches their types directly), but Rider walks
+        the full dependency closure of every referenced assembly and reports them
+        as "missing" until they are listed here. All ship in the game's Managed folder.
+        -->
+        <Reference Include="Assets">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Assets.dll</HintPath>
+        </Reference>
+        <Reference Include="Libraries">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Libraries.dll</HintPath>
+        </Reference>
+        <Reference Include="MathNet.Numerics">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\MathNet.Numerics.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.Threading">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Microsoft.VisualStudio.Threading.dll</HintPath>
+        </Reference>
+        <Reference Include="Nerdbank.Streams">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Nerdbank.Streams.dll</HintPath>
+        </Reference>
+        <Reference Include="Noesis.NoesisGUI">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Noesis.NoesisGUI.dll</HintPath>
+        </Reference>
+        <Reference Include="ParadoxNotion">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\ParadoxNotion.dll</HintPath>
+        </Reference>
+        <Reference Include="Plugins">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Plugins.dll</HintPath>
+        </Reference>
+        <Reference Include="Sentry">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Sentry.dll</HintPath>
+        </Reference>
+        <Reference Include="Sentry.Unity">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Sentry.Unity.dll</HintPath>
+        </Reference>
+        <Reference Include="StreamJsonRpc">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\StreamJsonRpc.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Text.Json">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\System.Text.Json.dll</HintPath>
+        </Reference>
+        <Reference Include="System.Threading.Channels">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\System.Threading.Channels.dll</HintPath>
+        </Reference>
+        <Reference Include="Vectrosity">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Vectrosity.dll</HintPath>
+        </Reference>
+        <Reference Include="Vuplex.WebView">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\Vuplex.WebView.dll</HintPath>
+        </Reference>
+        <Reference Include="com.rlabrecque.steamworks.net">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\com.rlabrecque.steamworks.net.dll</HintPath>
+        </Reference>
+        <Reference Include="websocket-sharp">
+          <HintPath>$(GameDir)\Sea Power_Data\Managed\websocket-sharp.dll</HintPath>
+        </Reference>
         <Reference Include="0Harmony20">
           <HintPath>$(GameDir)\BepInEx\core\0Harmony20.dll</HintPath>
         </Reference>
