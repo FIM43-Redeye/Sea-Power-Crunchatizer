@@ -238,8 +238,7 @@ namespace SeaPowerCrunchatizer.Patches
                     loadoutData = __instance._baseObject.gameObject.AddComponent<HardpointLoadoutData>();
                 }
 
-                var weaponsList = (List<WeaponBase>?)AccessTools.Field(typeof(WeaponSystemHardpoint), "_weapons")
-                    .GetValue(__instance);
+                var weaponsList = __instance._weapons;
 
                 if (weaponsList == null || weaponsList.Count == 0)
                 {
