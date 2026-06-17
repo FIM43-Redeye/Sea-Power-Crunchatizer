@@ -351,34 +351,21 @@ namespace SeaPowerCrunchatizer.Patches
                         continue;
                     }
 
-                    if (!originalCounts.ContainsKey(info.AmmoFileName))
-                    {
-                        originalCounts[info.AmmoFileName] = 0;
-                    }
-                    originalCounts[info.AmmoFileName]++;
+                    originalCounts.Increment(info.AmmoFileName);
                 }
 
                 // Count current remaining weapons by type
                 var currentCounts = new Dictionary<string, int>();
                 foreach (var weapon in currentWeapons)
                 {
-                    string fileName = weapon?._ap?._ammunitionFileName ?? "";
-                    if (string.IsNullOrEmpty(fileName))
+                    // Skip empty hardpoints and fuel tanks; Increment ignores unnamed ammo.
+                    var ap = weapon?._ap;
+                    if (ap == null || ap._subType == Ammunition.Type.Fueltank)
                     {
                         continue;
                     }
 
-                    // Skip fuel tanks
-                    if (weapon._ap._subType == Ammunition.Type.Fueltank)
-                    {
-                        continue;
-                    }
-
-                    if (!currentCounts.ContainsKey(fileName))
-                    {
-                        currentCounts[fileName] = 0;
-                    }
-                    currentCounts[fileName]++;
+                    currentCounts.Increment(ap._ammunitionFileName);
                 }
 
                 // Log the comparison
