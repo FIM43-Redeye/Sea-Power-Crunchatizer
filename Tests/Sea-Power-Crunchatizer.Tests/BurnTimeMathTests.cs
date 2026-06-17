@@ -60,30 +60,46 @@ namespace SeaPowerCrunchatizer.Tests
         }
 
         [TestMethod]
-        public void ExtendFlightTime_PositiveValue_MultipliesProportionally()
+        public void ExtendFlightTime_Proportional_MultipliesByFactor()
         {
-            // A 120s-flight missile should gain proportional reach, not a flat cap.
-            Assert.AreEqual(120f * BurnTimeMath.FlightTimeMultiplier, BurnTimeMath.ExtendFlightTime(120f));
+            // A 120s-flight missile gains proportional reach, not a flat cap.
+            Assert.AreEqual(120f * BurnTimeMath.FlightTimeMultiplier, BurnTimeMath.ExtendFlightTime(120f, proportional: true));
         }
 
         [TestMethod]
-        public void ExtendFlightTime_ShortFlight_StaysShort()
+        public void ExtendFlightTime_Proportional_ShortFlightStaysShort()
         {
             // A 30s SAM stays modest (30 * 3 = 90s), so its range sim isn't over-iterated.
-            Assert.AreEqual(90f, BurnTimeMath.ExtendFlightTime(30f));
+            Assert.AreEqual(90f, BurnTimeMath.ExtendFlightTime(30f, proportional: true));
+        }
+
+        [TestMethod]
+        public void ExtendFlightTime_Fixed_ShortFlightRaisedToFloor()
+        {
+            // A 30s SAM is raised to the flat 600s floor.
+            Assert.AreEqual(BurnTimeMath.FixedFlightTimeSeconds, BurnTimeMath.ExtendFlightTime(30f, proportional: false));
+        }
+
+        [TestMethod]
+        public void ExtendFlightTime_Fixed_LongerFlightNotReduced()
+        {
+            // A missile that already flies longer than the floor must not be nerfed.
+            Assert.AreEqual(900f, BurnTimeMath.ExtendFlightTime(900f, proportional: false));
         }
 
         [TestMethod]
         public void ExtendFlightTime_Zero_IsLeftUnset()
         {
-            // Non-positive means "unset" -> leave it so the game uses its own default.
-            Assert.AreEqual(0f, BurnTimeMath.ExtendFlightTime(0f));
+            // Non-positive means "unset" -> leave it so the game uses its own default, in both modes.
+            Assert.AreEqual(0f, BurnTimeMath.ExtendFlightTime(0f, proportional: true));
+            Assert.AreEqual(0f, BurnTimeMath.ExtendFlightTime(0f, proportional: false));
         }
 
         [TestMethod]
         public void ExtendFlightTime_Negative_IsLeftUnset()
         {
-            Assert.AreEqual(-1f, BurnTimeMath.ExtendFlightTime(-1f));
+            Assert.AreEqual(-1f, BurnTimeMath.ExtendFlightTime(-1f, proportional: true));
+            Assert.AreEqual(-1f, BurnTimeMath.ExtendFlightTime(-1f, proportional: false));
         }
     }
 }

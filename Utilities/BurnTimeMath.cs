@@ -60,13 +60,33 @@ namespace SeaPowerCrunchatizer.Utilities
         public const float FlightTimeMultiplier = 3f;
 
         /// <summary>
-        /// Returns the extended flight-time cap for an infinite-burn missile. A non-positive input
-        /// means "unset" (the game falls back to its own default), so it is left untouched rather
-        /// than turned into a hard zero.
+        /// The flat flight-time floor used by the non-proportional mode. Chosen to comfortably
+        /// extend reach while staying small enough that the range sim (which iterates over
+        /// flight time) is not pathologically expensive.
         /// </summary>
-        public static float ExtendFlightTime(float maxFlightTime)
+        public const float FixedFlightTimeSeconds = 600f;
+
+        /// <summary>
+        /// Returns the extended flight-time cap for an infinite-burn missile.
+        /// <para>Proportional mode multiplies the missile's own flight time (scales per weapon,
+        /// so short-range missiles aren't over-simulated). Fixed mode raises it to a flat floor
+        /// (<see cref="FixedFlightTimeSeconds"/>) without ever reducing a longer-lived missile.</para>
+        /// A non-positive input means "unset" (the game falls back to its own default), so it is
+        /// left untouched rather than turned into a hard zero.
+        /// </summary>
+        public static float ExtendFlightTime(float maxFlightTime, bool proportional)
         {
-            return maxFlightTime > 0f ? maxFlightTime * FlightTimeMultiplier : maxFlightTime;
+            if (maxFlightTime <= 0f)
+            {
+                return maxFlightTime;
+            }
+
+            if (proportional)
+            {
+                return maxFlightTime * FlightTimeMultiplier;
+            }
+
+            return maxFlightTime > FixedFlightTimeSeconds ? maxFlightTime : FixedFlightTimeSeconds;
         }
     }
 }

@@ -76,9 +76,10 @@ namespace SeaPowerCrunchatizer.Patches
 
             ApplyRangeMultiplier(__instance, CheatConfig.WeaponRangeMult.Value);
 
-            if (CheatConfig.InfiniteMissileBurnTime.Value && __instance._ap._type == Ammunition.Type.Missile)
+            if (CheatConfig.InfiniteMissileBurnTime.Value != InfiniteBurnMode.Off &&
+                __instance._ap._type == Ammunition.Type.Missile)
             {
-                ApplyInfiniteBurnTime(__instance);
+                ApplyInfiniteBurnTime(__instance, CheatConfig.InfiniteMissileBurnTime.Value);
             }
         }
 
@@ -90,7 +91,7 @@ namespace SeaPowerCrunchatizer.Patches
         /// have their range simulated; legacy/cruise (KinematicsLevel.None) missiles ignore thrust
         /// and use a static launch range, so they are skipped.
         /// </summary>
-        private static void ApplyInfiniteBurnTime(Ammunition ammo)
+        private static void ApplyInfiniteBurnTime(Ammunition ammo, InfiniteBurnMode mode)
         {
             var ap = ammo._ap;
             if (ap.Kinematics != AmmunitionParameters.KinematicsLevel.Full)
@@ -105,11 +106,13 @@ namespace SeaPowerCrunchatizer.Patches
             ap._sustainerBurnTime = sustainerBurnTime;
 
             // The kinematic range simulation only runs for the missile's lifetime, so a sustained
-            // motor only buys longer range if the missile also lives longer. Extend proportionally.
-            ap._maxFlightTime = BurnTimeMath.ExtendFlightTime(ap._maxFlightTime);
+            // motor only buys longer range if the missile also lives longer. Proportional mode
+            // multiplies each missile's flight time; Fixed mode raises it to a flat floor.
+            ap._maxFlightTime = BurnTimeMath.ExtendFlightTime(
+                ap._maxFlightTime, proportional: mode == InfiniteBurnMode.Proportional);
 
             PlayerUtils.LogIfSpam(
-                $"AmmoMod: Infinite burn time for missile '{ap._displayedName}' " +
+                $"AmmoMod: Infinite burn time ({mode}) for missile '{ap._displayedName}' " +
                 $"(boost {accelerationTime}s, sustainer {sustainerBurnTime}s, maxFlight {ap._maxFlightTime}s).");
         }
 

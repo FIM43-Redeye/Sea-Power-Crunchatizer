@@ -29,6 +29,23 @@ namespace SeaPowerCrunchatizer.Config
     }
 
     /// <summary>
+    /// How the infinite missile burn-time cheat extends a missile's flight-time cap so the
+    /// endless motor actually translates into longer kinematic range (the range sim only runs
+    /// for the missile's lifetime).
+    /// </summary>
+    public enum InfiniteBurnMode
+    {
+        /// <summary>Cheat disabled - normal burn and flight time.</summary>
+        Off,
+        /// <summary>Burn forever and multiply each missile's flight time proportionally (default).
+        /// Scales per weapon, so short-range missiles aren't over-simulated.</summary>
+        Proportional,
+        /// <summary>Burn forever and raise each missile's flight time to a flat floor (600s).
+        /// Simpler/uniform, but over-simulates very short-range weapons.</summary>
+        Fixed
+    }
+
+    /// <summary>
     /// Central configuration manager for all Crunchatizer mod settings.
     /// All settings are exposed as static ConfigEntry fields for easy access from patches.
     /// </summary>
@@ -161,9 +178,11 @@ namespace SeaPowerCrunchatizer.Config
         /// <summary>
         /// Player missile motors burn for the whole flight instead of cutting out, so the
         /// missile powers to maximum range instead of coasting down and stall-destructing.
-        /// Only affects full-kinematics missiles (the only ones that model motor burn).
+        /// The mode controls how the flight-time cap is extended so the endless burn turns
+        /// into longer range. Only affects full-kinematics missiles (the only ones that model
+        /// motor burn). See <see cref="InfiniteBurnMode"/>.
         /// </summary>
-        public static ConfigEntry<bool> InfiniteMissileBurnTime = null!;
+        public static ConfigEntry<InfiniteBurnMode> InfiniteMissileBurnTime = null!;
 
         /// <summary>
         /// Multiplier for fire rate (higher = faster). Affects RoF, various delays.
@@ -312,8 +331,9 @@ namespace SeaPowerCrunchatizer.Config
             UnbreakableWireGuidance = config.Bind(WeaponSection, "Unbreakable Wire Guidance", true,
                 "Prevents wire-guided weapons from breaking their connection due to the launching vessel's speed.");
 
-            InfiniteMissileBurnTime = config.Bind(WeaponSection, "Infinite Missile Burn Time", true,
-                "Player missile motors burn for the entire flight instead of cutting out, so missiles power to maximum range rather than coasting down and self-destructing. Only affects full-kinematics missiles.");
+            InfiniteMissileBurnTime = config.Bind(WeaponSection, "Infinite Missile Burn Time", InfiniteBurnMode.Proportional,
+                "Player missile motors burn for the entire flight instead of cutting out, so missiles power to maximum range rather than coasting down and self-destructing. Only affects full-kinematics missiles. " +
+                "Off = disabled; Proportional = also multiply each missile's flight time (scales per weapon); Fixed = also raise each missile's flight time to a flat 600s floor.");
 
             FireRateMult = config.Bind(WeaponSection, "Fire Rate Multiplier", 1,
                 "Multiplier for fire rate (higher = faster). Affects RoF, various delays. 0 = instant, other values multiply.");
